@@ -153,13 +153,12 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	}
 
 	@Override
-	// merge joins two OUT sets to make a new IN set
+	// merge joins two out sets to make a new in set
 	protected void merge(Unit succNode, NumericalStateWrapper in1, NumericalStateWrapper in2, NumericalStateWrapper out) {
 		logger.debug("in merge: " + succNode);
 
 		logger.debug("join: ");
-		NumericalStateWrapper w3_new = w1.join(w2);
-
+		out = in1.join(in2);
 	}
 
 	@Override
