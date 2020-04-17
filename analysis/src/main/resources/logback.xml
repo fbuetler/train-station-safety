@@ -66,6 +66,7 @@
 	<logger name="ch.ethz.rse.numerical" level="trace" additivity="false">
 		<appender-ref ref="NUMERICAL" />
 		<appender-ref ref="ALL" />
+		<appender-ref ref="CONSOLE" />
 	</logger>
 
 	<!-- soot: only to SOOT and ALL (but nowhere else) -->
