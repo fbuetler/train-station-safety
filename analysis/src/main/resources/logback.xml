@@ -12,7 +12,7 @@
 			<pattern>%d{HH:mm:ss.SSS} [%thread] %-3level %logger{20}: %msg%n</pattern>
 		</encoder>
 		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-			<level>INFO</level>
+			<level>DEBUG</level>
 		</filter>
 	</appender>
 
