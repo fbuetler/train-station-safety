@@ -31,7 +31,6 @@ public class EnvironmentGenerator {
 	 */
 	private List<String> ints = new LinkedList<String>();
 
-
 	private final Environment env;
 
 	/**
@@ -44,8 +43,18 @@ public class EnvironmentGenerator {
 		this.pointsTo = pointsTo;
 
 		// populate this.ints
+		for (Local var : method.getActiveBody().getLocals()) {
+			String varname = var.getName();
+			if (var instanceof IntegerType) {
+				if (!ints.contains(varname)) {
+					ints.add(varname);
+				} else {
+					// TODO (flbuetle) we dont expect duplicates here. maybe panic?
+				}
+			}
+		}
 
-		// FILL THIS OUT
+		// TODO FILL THIS OUT. (flbuetle) what else?
 
 		String ints_arr[] = Iterables.toArray(this.ints, String.class);
 		String reals[] = {}; // we are not analyzing real numbers
@@ -55,6 +64,5 @@ public class EnvironmentGenerator {
 	public Environment getEnvironment() {
 		return this.env;
 	}
-
 
 }
