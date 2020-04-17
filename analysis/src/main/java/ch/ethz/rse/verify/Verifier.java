@@ -3,6 +3,7 @@ package ch.ethz.rse.verify;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -58,22 +59,48 @@ public class Verifier extends AVerifier {
 	}
 
 	private void runNumericalAnalysis() {
+		// TODO (flbuetle) start analysis here and then only read results for the specific cases from it
 	}
 
 	@Override
 	public boolean checkTrackNonNegative() {
-		// FILL THIS OUT
+		logger.debug("Analyzing checkTrackNonNegative for {}", c.getName());
+		// TODO FILL THIS OUT
+		for (SootMethod m : c.getMethods()) {
+			logger.debug("Analyzing checkTrackNonNegative for {} method {}", c.getName(), m.getName());
+			NumericalAnalysis na = new NumericalAnalysis(m, SootHelper.getUnitGraph(m), pointsTo);
+			
+			// TODO (flbuetle) the following is just something from the soot survival guide
+			for (Unit s : m.getActiveBody().getUnits()) {
+				
+				NumericalStateWrapper fb = na.getFlowBefore(s);
+				NumericalStateWrapper ffa;
+				List<NumericalStateWrapper> bfa;
+				if (s.fallsThrough()) {
+					ffa = na.getFallFlowAfter(s);
+				}
+				if (s.branches()) {
+					bfa = na.getBranchFlowAfter(s);
+				}
+			}
+		}
 
 		return true;
 	}
 
 	@Override
 	public boolean checkTrackInRange() {
+		logger.debug("Analyzing checkTrackInRange for {}", c.getName());
+		// TODO: FILL THIS OUT
+		
 		return true;
 	}
 
 	@Override
 	public boolean checkNoCrash() {
+		logger.debug("Analyzing checkNoCrash for {}", c.getName());
+		// TODO: FILL THIS OUT
+		
 		return true;
 	}
 
