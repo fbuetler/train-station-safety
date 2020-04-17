@@ -149,10 +149,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	@Override
 	protected NumericalStateWrapper entryInitialFlow() {
 		// state of entry points into function
-		NumericalStateWrapper ret = NumericalStateWrapper.top(man, env);
-
-
-		return ret;
+		return NumericalStateWrapper.top(man, env);
 	}
 
 	@Override
