@@ -76,7 +76,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	private HashMap<Unit, NumericalStateWrapper> loopHeadState = new HashMap<Unit, NumericalStateWrapper>();
 
 	/**
-	 * Numerical abstract domain to use for analysis: COnvex polyhedra
+	 * Numerical abstract domain to use for analysis: Convex polyhedra
 	 */
 	public final Manager man = new Polka(true);
 
@@ -135,6 +135,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	}
 
 	@Override
+	// copy brings OUT set to predecessor's IN set
 	protected void copy(NumericalStateWrapper source, NumericalStateWrapper dest) {
 		source.copyInto(dest);
 	}
@@ -155,7 +156,8 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	}
 
 	@Override
-	protected void merge(Unit succNode, NumericalStateWrapper w1, NumericalStateWrapper w2, NumericalStateWrapper w3) {
+	// merge joins two OUT sets to make a new IN set
+	protected void merge(Unit succNode, NumericalStateWrapper in1, NumericalStateWrapper in2, NumericalStateWrapper out) {
 		logger.debug("in merge: " + succNode);
 
 		logger.debug("join: ");
@@ -170,6 +172,11 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	}
 
 	@Override
+	/*
+	 * Need to differentiate between branch and fall-through OUT set:
+	 * fallOut is a one-element list
+	 * branchOuts contains a FlowSet for each non-fall-through successor
+	 */
 	protected void flowThrough(NumericalStateWrapper inWrapper, Unit op, List<NumericalStateWrapper> fallOutWrappers,
 			List<NumericalStateWrapper> branchOutWrappers) {
 		logger.debug(inWrapper + " " + op + " => ?");
@@ -247,7 +254,9 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	}
 
 	public void handleInvoke(JInvokeStmt jInvStmt, NumericalStateWrapper fallOutWrapper) throws ApronException {
-		// FILL THIS OUT
+		// TODO: FILL THIS OUT
+		// example input: virtualinvoke $r2.<ch.ethz.rse.TrainStation: void arrive(int)>(i0) <Top>
+	}
 	}
 
 
@@ -261,7 +270,8 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * @return state of in after assignment
 	 */
 	private void handleDef(NumericalStateWrapper outWrapper, Value left, Value right) throws ApronException {
-		// FILL THIS OUT
+		// TODO: FILL THIS OUT
+		// example input: <Top> i0 := @parameter0: int
 	}
 
 }
