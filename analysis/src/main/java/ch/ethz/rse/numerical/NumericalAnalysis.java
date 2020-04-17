@@ -224,15 +224,12 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 					// handle assignment
 					handleDef(fallOutWrapper, left, right);
 				}
-
 			} else if (s instanceof JIfStmt) {
 				// handle if
-
-				// FILL THIS OUT
-
+				JIfStmt jIfStmt = (JIfStmt) s;
+				handleIf(jIfStmt, fallOutWrapper);
 			} else if (s instanceof JInvokeStmt && ((JInvokeStmt) s).getInvokeExpr() instanceof JVirtualInvokeExpr) {
 				// handle invocations
-
 				JInvokeStmt jInvStmt = (JInvokeStmt) s;
 				handleInvoke(jInvStmt, fallOutWrapper);
 			}
@@ -254,6 +251,10 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		// TODO: FILL THIS OUT
 		// example input: virtualinvoke $r2.<ch.ethz.rse.TrainStation: void arrive(int)>(i0) <Top>
 	}
+	
+	public void handleIf(JIfStmt jIfStmt, NumericalStateWrapper fallOutWrapper) throws ApronException {
+		// TODO: FILL THIS OUT
+		// example input: if i0 > 10 goto return <Top>
 	}
 
 
