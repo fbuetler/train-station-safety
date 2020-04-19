@@ -627,6 +627,7 @@ public class ApronTest {
 		System.out.println("=============");
 		Linexpr1 ll1 = new Linexpr1(env2);
 		Linexpr1 ll2 = new Linexpr1(env2, 3);
+		System.out.println("ll1 before: " + ll1);
 		ll1.setCst(new MpqScalar(1, 2));
 		ll1.setCoeff("aa", new MpfrScalar(1.23, Mpfr.RNDU));
 		ll1.setCoeff("zz", new DoubleScalar(1.56));

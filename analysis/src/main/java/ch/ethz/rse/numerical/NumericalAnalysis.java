@@ -90,6 +90,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * {@link WIDENING_THRESHOLD}th time
 	 * 
 	 * (lmeinen) We could probably increase precision by increasing this threshold, at the cost of runtime
+	 * (lmeinen) Should we reset the number of times a head is met when the branch falls through 100%, e.g. for nested loops?
 	 */
 	private static final int WIDENING_THRESHOLD = 6;
 
@@ -281,6 +282,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * example input: if i0 > 10 goto return <Top>
 	 * 
 	 * TODO: Need to change loopHeads and loopHeadState (compare stmt with loophead) and widen when threshold reached
+	 * NOTE: When widening, need to carefully choose outgoing numerical states such that fixed-point can be reached
 	 * 
 	 * @param jIfStmt			Statement to be handled
 	 * @param fallOutWrapper	Numerical state if branch condition evaluates to false
@@ -289,6 +291,37 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 */
 	private void handleIf(JIfStmt jIfStmt, NumericalStateWrapper fallOutWrapper, NumericalStateWrapper branchOutWrapper) throws ApronException {
 		// TODO: FILL THIS OUT
+		loopHeadState.put(jIfStmt,fallOutWrapper);
+		if(jIfStmt.branches()) {
+			int iter = loopHeads.get(jIfStmt).increment();
+			Value condition = jIfStmt.getCondition();
+			Value left = ((BinopExpr) condition).getOp1();
+			Value right = ((BinopExpr) condition).getOp2();
+			
+			if(condition instanceof JEqExpr) {
+				
+			} else if(condition instanceof JGeExpr) {
+				
+			} else if(condition instanceof JGtExpr) {
+				
+			} else if(condition instanceof JLeExpr) {
+				
+			} else if(condition instanceof JLtExpr) {
+				
+			} else if(condition instanceof JNeExpr) {
+				
+			} else {
+				throw new ApronException();
+			}
+			
+			if(iter > WIDENING_THRESHOLD) {
+			
+			}
+		} else {
+			loopHeads.get(jIfStmt).value = 0; // Reset number of iterations. Prevents loss of precision in case of nested loops.
+			
+		}
+		
 	}
 
 
@@ -304,7 +337,6 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * @param right			RHS of equation, i.e. a variable, a constant, or a binary expression
 	 */
 	private void handleDef(NumericalStateWrapper outWrapper, Value left, Value right) throws ApronException {
-		// TODO: FILL THIS OUT
 		String varName = ((Local) left).getName();
 		Texpr1Intern value;
 		Texpr1Node expr;
@@ -324,6 +356,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 				expr = new Texpr1BinNode(Texpr1BinNode.OP_SUB,lArg,rArg);
 			}
 		} else {
+			// RHS is a variable or a constant
 			expr = atomic(right);
 		}
 		value = new Texpr1Intern(env, expr);

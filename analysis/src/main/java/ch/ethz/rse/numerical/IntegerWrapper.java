@@ -10,4 +10,14 @@ public class IntegerWrapper {
 	public IntegerWrapper(int v) {
 		value = v;
 	}
+	
+	/**
+	 * Increments value field
+	 * 
+	 * @return new value
+	 */
+	public int increment() {
+		value++;
+		return value;
+	}
 }
