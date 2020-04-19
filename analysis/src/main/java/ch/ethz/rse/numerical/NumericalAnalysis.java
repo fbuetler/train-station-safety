@@ -12,6 +12,8 @@ import apron.Environment;
 import apron.Manager;
 import apron.MpqScalar;
 import apron.Polka;
+import apron.Scalar;
+import apron.DoubleScalar;
 import apron.Tcons1;
 import apron.Texpr1BinNode;
 import apron.Texpr1CstNode;
@@ -27,6 +29,7 @@ import soot.DoubleType;
 import soot.IntegerType;
 import soot.Local;
 import soot.RefType;
+import soot.SootHelper;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
@@ -258,21 +261,24 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * 
 	 * Handle method invocations
 	 * 
+	 * example input: virtualinvoke $r2.<ch.ethz.rse.TrainStation: void arrive(int)>(i0) <Top>
+	 * 
 	 * TODO: (lmeinen) Inquire regarding possible method invocations (i.e. just arrive or also other methods possible?)
 	 * 
 	 * @param jInvStmt			Statement to be handled
 	 * @param fallOutWrapper	Numerical state at time of invocation
 	 * @throws ApronException	
 	 */
-	public void handleInvoke(JInvokeStmt jInvStmt, NumericalStateWrapper fallOutWrapper) throws ApronException {
+	private void handleInvoke(JInvokeStmt jInvStmt, NumericalStateWrapper fallOutWrapper) throws ApronException {
 		// TODO: FILL THIS OUT
-		// example input: virtualinvoke $r2.<ch.ethz.rse.TrainStation: void arrive(int)>(i0) <Top>
 	}
 	
 	/**
 	 * 
 	 * Handle branches: Need to differentiate between taken and fall-through branch
 	 * Condition can be of type ==, >=, >, <=, <, or !=, with LHS and RHS being constants or local variables
+	 * 
+	 * example input: if i0 > 10 goto return <Top>
 	 * 
 	 * TODO: Need to change loopHeads and loopHeadState (compare stmt with loophead) and widen when threshold reached
 	 * 
@@ -281,9 +287,8 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * @param branchOutWrapper	Numerical state if branch condition evaluates to true
 	 * @throws ApronException	
 	 */
-	public void handleIf(JIfStmt jIfStmt, NumericalStateWrapper fallOutWrapper, NumericalStateWrapper branchOutWrapper) throws ApronException {
+	private void handleIf(JIfStmt jIfStmt, NumericalStateWrapper fallOutWrapper, NumericalStateWrapper branchOutWrapper) throws ApronException {
 		// TODO: FILL THIS OUT
-		// example input: if i0 > 10 goto return <Top>
 	}
 
 
@@ -291,6 +296,8 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 *
 	 * Statements of the sort x = y, x = 5, or x = EXPR, where EXPR is one of the three binary expressions: *, +, or -
 	 * EXPR only uses local variables or constants
+	 * 
+	 * example input: <Top> i0 := @parameter0: int
 	 *
 	 * @param outWrapper	Will contain updated numerical state after assignment has been handled
 	 * @param left			LHS of equation, i.e. variable being assigned to
@@ -298,7 +305,50 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 */
 	private void handleDef(NumericalStateWrapper outWrapper, Value left, Value right) throws ApronException {
 		// TODO: FILL THIS OUT
-		// example input: <Top> i0 := @parameter0: int
+		String varName = ((Local) left).getName();
+		Texpr1Intern value;
+		Texpr1Node expr;
+		if(right instanceof BinopExpr) {
+			BinopExpr rExpr = (BinopExpr) right;
+			Texpr1Node lArg = atomic(rExpr.getOp1());
+			Texpr1Node rArg = atomic(rExpr.getOp2());
+			
+			if(rExpr instanceof AddExpr) {
+				// RHS is an addition
+				expr = new Texpr1BinNode(Texpr1BinNode.OP_ADD,lArg,rArg);
+			} else if(rExpr instanceof MulExpr) {
+				// RHS is a multiplication
+				expr = new Texpr1BinNode(Texpr1BinNode.OP_MUL,lArg,rArg);
+			} else {
+				// RHS is a subtraction
+				expr = new Texpr1BinNode(Texpr1BinNode.OP_SUB,lArg,rArg);
+			}
+		} else {
+			expr = atomic(right);
+		}
+		value = new Texpr1Intern(env, expr);
+		outWrapper.assign(varName, value);
+	}
+	
+	/**
+	 * Changes a value into a Texpr1Node, such that it can be used to create a Texpr1Intern object
+	 * 
+	 * @param val	Value representing either a Local, or a Constant
+	 * @return		Texpr1Node representing val
+	 * @throws ApronException
+	 */
+	private Texpr1Node atomic(Value val) throws ApronException {
+		if(SootHelper.isIntValue(val)){
+			// RHS is a constant
+			Scalar sclr = new DoubleScalar();
+			sclr.set(((IntConstant)val).value);
+			return new Texpr1CstNode(sclr);
+		} else if(val instanceof Local) {
+			// RHS is a local variable
+			return new Texpr1VarNode(((Local)val).getName());
+		} else {
+			throw new ApronException();
+		}
 	}
 
 }
