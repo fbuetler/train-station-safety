@@ -49,12 +49,14 @@ public class EnvironmentGenerator {
 				if (!ints.contains(varname)) {
 					ints.add(varname);
 				} else {
-					// TODO (flbuetle) we dont expect duplicates here. maybe panic?
+					// TODO	(flbuetle) we dont expect duplicates here. maybe panic?
+					//		(lmeinen) Only occurs when testcases wrong, which is a pain to debug --> Super, duper clear custom exception
 				}
 			}
 		}
 
-		// TODO FILL THIS OUT. (flbuetle) what else?
+		// TODO FILL THIS OUT.	(flbuetle) what else? 
+		//						(lmeinen) Probably list of CallToArrive objects? Or should this be stored in PointsToInitializer?
 
 		String ints_arr[] = Iterables.toArray(this.ints, String.class);
 		String reals[] = {}; // we are not analyzing real numbers

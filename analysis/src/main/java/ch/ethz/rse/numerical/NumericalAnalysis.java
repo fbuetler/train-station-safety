@@ -85,6 +85,8 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	/**
 	 * We apply widening after updating the state at a given merge point for the
 	 * {@link WIDENING_THRESHOLD}th time
+	 * 
+	 * (lmeinen) We could probably increase precision by increasing this threshold, at the cost of runtime
 	 */
 	private static final int WIDENING_THRESHOLD = 6;
 
@@ -168,10 +170,16 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	}
 
 	@Override
-	/*
-	 * Need to differentiate between branch and fall-through OUT set:
-	 * fallOut is a one-element list
-	 * branchOuts contains a FlowSet for each non-fall-through successor
+	/**
+	 * "Brains" of the analysis. Determines the OUT state depending on the IN state.
+	 * Need to differentiate between branch and fall-through OUT set.
+	 * 
+	 * TODO: (lmeinen) I believe we still need to actually modify the OUT sets to contain updated values?
+	 * 
+	 * @param	inWrapper			incoming numerical state
+	 * @param	op					statement to be analyzed
+	 * @param	fallOutWrappers 	is a one-element list
+	 * @param	branchOutWrappers 	contains a FlowSet for each non-fall-through successor
 	 */
 	protected void flowThrough(NumericalStateWrapper inWrapper, Unit op, List<NumericalStateWrapper> fallOutWrappers,
 			List<NumericalStateWrapper> branchOutWrappers) {
@@ -226,7 +234,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 			} else if (s instanceof JIfStmt) {
 				// handle if
 				JIfStmt jIfStmt = (JIfStmt) s;
-				handleIf(jIfStmt, fallOutWrapper);
+				handleIf(jIfStmt, fallOutWrapper, branchOutWrapper);
 			} else if (s instanceof JInvokeStmt && ((JInvokeStmt) s).getInvokeExpr() instanceof JVirtualInvokeExpr) {
 				// handle invocations
 				JInvokeStmt jInvStmt = (JInvokeStmt) s;
@@ -246,12 +254,34 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		}
 	}
 
+	/**
+	 * 
+	 * Handle method invocations
+	 * 
+	 * TODO: (lmeinen) Inquire regarding possible method invocations (i.e. just arrive or also other methods possible?)
+	 * 
+	 * @param jInvStmt			Statement to be handled
+	 * @param fallOutWrapper	Numerical state at time of invocation
+	 * @throws ApronException	
+	 */
 	public void handleInvoke(JInvokeStmt jInvStmt, NumericalStateWrapper fallOutWrapper) throws ApronException {
 		// TODO: FILL THIS OUT
 		// example input: virtualinvoke $r2.<ch.ethz.rse.TrainStation: void arrive(int)>(i0) <Top>
 	}
 	
-	public void handleIf(JIfStmt jIfStmt, NumericalStateWrapper fallOutWrapper) throws ApronException {
+	/**
+	 * 
+	 * Handle branches: Need to differentiate between taken and fall-through branch
+	 * Condition can be of type ==, >=, >, <=, <, or !=, with LHS and RHS being constants or local variables
+	 * 
+	 * TODO: Need to change loopHeads and loopHeadState (compare stmt with loophead) and widen when threshold reached
+	 * 
+	 * @param jIfStmt			Statement to be handled
+	 * @param fallOutWrapper	Numerical state if branch condition evaluates to false
+	 * @param branchOutWrapper	Numerical state if branch condition evaluates to true
+	 * @throws ApronException	
+	 */
+	public void handleIf(JIfStmt jIfStmt, NumericalStateWrapper fallOutWrapper, NumericalStateWrapper branchOutWrapper) throws ApronException {
 		// TODO: FILL THIS OUT
 		// example input: if i0 > 10 goto return <Top>
 	}
@@ -259,12 +289,12 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 
 	/**
 	 *
-	 * handle assignment
+	 * Statements of the sort x = y, x = 5, or x = EXPR, where EXPR is one of the three binary expressions: *, +, or -
+	 * EXPR only uses local variables or constants
 	 *
-	 * @param in
-	 * @param left
-	 * @param right
-	 * @return state of in after assignment
+	 * @param outWrapper	Will contain updated numerical state after assignment has been handled
+	 * @param left			LHS of equation, i.e. variable being assigned to
+	 * @param right			RHS of equation, i.e. a variable, a constant, or a binary expression
 	 */
 	private void handleDef(NumericalStateWrapper outWrapper, Value left, Value right) throws ApronException {
 		// TODO: FILL THIS OUT
