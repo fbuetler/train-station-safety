@@ -9,6 +9,9 @@ import org.slf4j.LoggerFactory;
 import apron.Abstract1;
 import apron.ApronException;
 import apron.Environment;
+import apron.Generator1;
+import apron.Lincons1;
+import apron.Linexpr1;
 import apron.Manager;
 import apron.MpqScalar;
 import apron.Polka;
@@ -33,12 +36,19 @@ import soot.SootHelper;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
+import soot.jimple.AbstractJimpleValueSwitch;
 import soot.jimple.AddExpr;
 import soot.jimple.BinopExpr;
 import soot.jimple.DefinitionStmt;
+import soot.jimple.EqExpr;
+import soot.jimple.GeExpr;
+import soot.jimple.GtExpr;
 import soot.jimple.IfStmt;
 import soot.jimple.IntConstant;
+import soot.jimple.LeExpr;
+import soot.jimple.LtExpr;
 import soot.jimple.MulExpr;
+import soot.jimple.NeExpr;
 import soot.jimple.ParameterRef;
 import soot.jimple.Stmt;
 import soot.jimple.SubExpr;
@@ -175,7 +185,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 
 	@Override
 	/**
-	 * "Brains" of the analysis. Determines the OUT state depending on the IN state.
+	 * "Brains" of the analysis. Determines the OUT state depending on the IN state for one Unit.
 	 * Need to differentiate between branch and fall-through OUT set.
 	 * 
 	 * TODO: (lmeinen) I believe we still need to actually modify the OUT sets to contain updated values?
@@ -282,6 +292,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * example input: if i0 > 10 goto return <Top>
 	 * 
 	 * TODO: Need to change loopHeads and loopHeadState (compare stmt with loophead) and widen when threshold reached
+	 * TODO: Make pretty
 	 * NOTE: When widening, need to carefully choose outgoing numerical states such that fixed-point can be reached
 	 * 
 	 * @param jIfStmt			Statement to be handled
@@ -291,39 +302,38 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 */
 	private void handleIf(JIfStmt jIfStmt, NumericalStateWrapper fallOutWrapper, NumericalStateWrapper branchOutWrapper) throws ApronException {
 		// TODO: FILL THIS OUT
-		loopHeadState.put(jIfStmt,fallOutWrapper);
-		if(jIfStmt.branches()) {
-			int iter = loopHeads.get(jIfStmt).increment();
-			Value condition = jIfStmt.getCondition();
-			Value left = ((BinopExpr) condition).getOp1();
-			Value right = ((BinopExpr) condition).getOp2();
-			
-			if(condition instanceof JEqExpr) {
-				
-			} else if(condition instanceof JGeExpr) {
-				
-			} else if(condition instanceof JGtExpr) {
-				
-			} else if(condition instanceof JLeExpr) {
-				
-			} else if(condition instanceof JLtExpr) {
-				
-			} else if(condition instanceof JNeExpr) {
-				
-			} else {
-				throw new ApronException();
-			}
-			
-			if(iter > WIDENING_THRESHOLD) {
-			
-			}
+		NumericalStateWrapper inWrapper = fallOutWrapper.copy();
+		loopHeadState.put(jIfStmt,inWrapper);
+		int iter = loopHeads.get(jIfStmt).increment();
+		
+		boolean branches = true; // True iff we might take branch
+		Value condition = jIfStmt.getCondition();
+		NumericalStateWrapper cnstr = NumericalStateWrapper.top(man, env);
+		Linexpr1 expr = combSides(condition);
+		Lincons1 aprCondition;
+		
+		if(condition instanceof JEqExpr) {
+			aprCondition = new Lincons1(Lincons1.EQ,expr);
+		} else if(condition instanceof JGeExpr || condition instanceof JLeExpr) {
+			aprCondition = new Lincons1(Lincons1.SUPEQ,expr);
+		} else if(condition instanceof JGtExpr || condition instanceof JLtExpr) {
+			aprCondition = new Lincons1(Lincons1.SUP,expr);
+		} else if(condition instanceof JNeExpr) {
+			aprCondition = new Lincons1(Lincons1.DISEQ,expr);
 		} else {
-			loopHeads.get(jIfStmt).value = 0; // Reset number of iterations. Prevents loss of precision in case of nested loops.
-			
+			throw new ApronException();
 		}
 		
+		branches = inWrapper.get().satisfy(man,aprCondition);
+		
+		if(iter > WIDENING_THRESHOLD) {
+		
+		}
+		
+		if(!branches) {
+			loopHeads.get(jIfStmt).value = 0; // Reset number of iterations. Prevents loss of precision in case of nested loops.
+		}
 	}
-
 
 	/**
 	 *
@@ -342,8 +352,8 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		Texpr1Node expr;
 		if(right instanceof BinopExpr) {
 			BinopExpr rExpr = (BinopExpr) right;
-			Texpr1Node lArg = atomic(rExpr.getOp1());
-			Texpr1Node rArg = atomic(rExpr.getOp2());
+			Texpr1Node lArg = Texpr1Node.fromLinexpr1(atomic(rExpr.getOp1()));
+			Texpr1Node rArg = Texpr1Node.fromLinexpr1(atomic(rExpr.getOp2()));
 			
 			if(rExpr instanceof AddExpr) {
 				// RHS is an addition
@@ -357,31 +367,75 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 			}
 		} else {
 			// RHS is a variable or a constant
-			expr = atomic(right);
+			expr = Texpr1Node.fromLinexpr1(atomic(right));
 		}
 		value = new Texpr1Intern(env, expr);
 		outWrapper.assign(varName, value);
 	}
 	
 	/**
-	 * Changes a value into a Texpr1Node, such that it can be used to create a Texpr1Intern object
+	 * Changes a value into a linear expression, such that it can be used to create an expression tree
 	 * 
 	 * @param val	Value representing either a Local, or a Constant
-	 * @return		Texpr1Node representing val
+	 * @return		Linexpr1 representing val
 	 * @throws ApronException
 	 */
-	private Texpr1Node atomic(Value val) throws ApronException {
+	private Linexpr1 atomic(Value val) {
+		Linexpr1 expr = new Linexpr1(env);
+		Scalar sclr = new DoubleScalar();
 		if(SootHelper.isIntValue(val)){
 			// RHS is a constant
-			Scalar sclr = new DoubleScalar();
 			sclr.set(((IntConstant)val).value);
-			return new Texpr1CstNode(sclr);
-		} else if(val instanceof Local) {
-			// RHS is a local variable
-			return new Texpr1VarNode(((Local)val).getName());
+			expr.setCst(sclr);
 		} else {
-			throw new ApronException();
+			// RHS is a local variable
+			sclr.set(1);
+			expr.setCoeff(((Local)val).getName(), sclr);
 		}
+		return expr;
+	}
+	
+	/**
+	 * Turns Soot expression of the form (left op right) into an Apron expression of the form (left-right op 0)
+	 * Left and right are inverted when op is < or <=
+	 * 
+	 * @param condition	Expression to be turned into Apron expression
+	 */
+	private Linexpr1 combSides(Value condition) {
+		Value left = ((BinopExpr) condition).getOp1();
+		Value right = ((BinopExpr) condition).getOp2();
+		if(condition instanceof JLeExpr || condition instanceof JLtExpr) {
+			Value tmp = left;
+			left = right;
+			right = tmp;
+		}
+		Linexpr1 expr = new Linexpr1(env);
+		Scalar sclr = new DoubleScalar();
+		int val = 0;
+		if(SootHelper.isIntValue(left)){
+			val += ((IntConstant) left).value;
+			if(SootHelper.isIntValue(right)) {
+				val -= ((IntConstant) right).value;
+			} else {
+				sclr.set(1);
+				sclr.neg();
+				expr.setCoeff(((Local)right).getName(), sclr);
+			}
+			sclr.set(val);
+			expr.setCst(sclr);
+		} else {
+			val += 1;
+			if(SootHelper.isIntValue(right)) {
+				sclr.set(((IntConstant) right).value);
+				sclr.neg();
+				expr.setCst(sclr);
+			} else {
+				val -= 1;
+			}
+			sclr.set(val);
+			expr.setCoeff(((Local)left).getName(), sclr);
+		}
+		return expr;
 	}
 
 }
