@@ -292,7 +292,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * example input: if i0 > 10 goto return <Top>
 	 * 
 	 * TODO: Need to change loopHeads and loopHeadState (compare stmt with loophead) and widen when threshold reached
-	 * TODO: Make pretty
+	 * TODO: Make pretty, eliminate excessive copies
 	 * NOTE: When widening, need to carefully choose outgoing numerical states such that fixed-point can be reached
 	 * 
 	 * @param jIfStmt			Statement to be handled
@@ -303,34 +303,42 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	private void handleIf(JIfStmt jIfStmt, NumericalStateWrapper fallOutWrapper, NumericalStateWrapper branchOutWrapper) throws ApronException {
 		// TODO: FILL THIS OUT
 		NumericalStateWrapper inWrapper = fallOutWrapper.copy();
-		loopHeadState.put(jIfStmt,inWrapper);
 		int iter = loopHeads.get(jIfStmt).increment();
+		if(iter > WIDENING_THRESHOLD) {
+			NumericalStateWrapper prevState = loopHeadState.get(jIfStmt);
+			prevState.widen(inWrapper);
+			prevState.copyInto(inWrapper); // New incoming state
+		}
+		loopHeadState.put(jIfStmt,inWrapper); 
 		
 		boolean branches = true; // True iff we might take branch
 		Value condition = jIfStmt.getCondition();
-		NumericalStateWrapper cnstr = NumericalStateWrapper.top(man, env);
-		Linexpr1 expr = combSides(condition);
-		Lincons1 aprCondition;
+		Linexpr1 expr = combSides(condition, false);
+		Linexpr1 exprInv = combSides(condition,true);
+		Lincons1 aprCondition, aprConditionInv;
 		
 		if(condition instanceof JEqExpr) {
 			aprCondition = new Lincons1(Lincons1.EQ,expr);
+			aprConditionInv = new Lincons1(Lincons1.DISEQ,expr);
 		} else if(condition instanceof JGeExpr || condition instanceof JLeExpr) {
 			aprCondition = new Lincons1(Lincons1.SUPEQ,expr);
+			aprConditionInv = new Lincons1(Lincons1.SUP,exprInv);
 		} else if(condition instanceof JGtExpr || condition instanceof JLtExpr) {
 			aprCondition = new Lincons1(Lincons1.SUP,expr);
+			aprConditionInv = new Lincons1(Lincons1.SUPEQ,exprInv);
 		} else if(condition instanceof JNeExpr) {
 			aprCondition = new Lincons1(Lincons1.DISEQ,expr);
+			aprConditionInv = new Lincons1(Lincons1.EQ,expr);
 		} else {
 			throw new ApronException();
 		}
 		
-		branches = inWrapper.get().satisfy(man,aprCondition);
+		branchOutWrapper.set(inWrapper.get().meetCopy(man, aprCondition));	// Condition holds
+		fallOutWrapper.set(inWrapper.get().meetCopy(man, aprConditionInv)); // Condition doesn't hold
+		branches = !branchOutWrapper.get().isBottom(man); // False <=> Definitely doesn't branch
 		
-		if(iter > WIDENING_THRESHOLD) {
 		
-		}
-		
-		if(!branches) {
+		if(branches) { // (lmeinen) Is this condition correct? Unsure due to most method descriptions talking about over-approximations
 			loopHeads.get(jIfStmt).value = 0; // Reset number of iterations. Prevents loss of precision in case of nested loops.
 		}
 	}
@@ -397,14 +405,17 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	
 	/**
 	 * Turns Soot expression of the form (left op right) into an Apron expression of the form (left-right op 0)
-	 * Left and right are inverted when op is < or <=
+	 * Left and right are inverted when op is < or <= due to Apron only offering <>, ==, >, >=
 	 * 
-	 * @param condition	Expression to be turned into Apron expression
+	 * TODO: Make pretty
+	 * 
+	 * @param Conditional expression to be turned into Apron expression
+	 * @param Do we need the inverse expression (useful when wanting the inverse of a condition without painfully inverting its coefficients)
 	 */
-	private Linexpr1 combSides(Value condition) {
+	private Linexpr1 combSides(Value condition, boolean inverse) {
 		Value left = ((BinopExpr) condition).getOp1();
 		Value right = ((BinopExpr) condition).getOp2();
-		if(condition instanceof JLeExpr || condition instanceof JLtExpr) {
+		if(inverse ^ (condition instanceof JLeExpr || condition instanceof JLtExpr)) {
 			Value tmp = left;
 			left = right;
 			right = tmp;
@@ -417,23 +428,29 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 			if(SootHelper.isIntValue(right)) {
 				val -= ((IntConstant) right).value;
 			} else {
-				sclr.set(1);
-				sclr.neg();
+				sclr.set(-1);
 				expr.setCoeff(((Local)right).getName(), sclr);
 			}
 			sclr.set(val);
 			expr.setCst(sclr);
 		} else {
+			String varNameLeft = ((Local)left).getName();
 			val += 1;
 			if(SootHelper.isIntValue(right)) {
 				sclr.set(((IntConstant) right).value);
 				sclr.neg();
 				expr.setCst(sclr);
 			} else {
-				val -= 1;
+				String varNameRight = ((Local)right).getName();
+				if(varNameLeft.equals(varNameRight)) {					
+					val -= 1;
+				} else {
+					sclr.set(-1);
+					expr.setCoeff(varNameRight, sclr);
+				}
 			}
 			sclr.set(val);
-			expr.setCoeff(((Local)left).getName(), sclr);
+			expr.setCoeff(varNameLeft, sclr);
 		}
 		return expr;
 	}
