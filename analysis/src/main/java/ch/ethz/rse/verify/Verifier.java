@@ -31,6 +31,8 @@ import soot.Unit;
 import soot.Value;
 import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JVirtualInvokeExpr;
+import soot.toolkits.graph.BriefUnitGraph;
+import soot.toolkits.graph.UnitGraph;
 
 /**
  * Main class handling verification
@@ -60,6 +62,10 @@ public class Verifier extends AVerifier {
 
 	private void runNumericalAnalysis() {
 		// TODO (flbuetle) start analysis here and then only read results for the specific cases from it
+		for(SootMethod method : this.c.getMethods()) {
+			UnitGraph g = new BriefUnitGraph(method.getActiveBody());
+			numericalAnalysis.put(method, new NumericalAnalysis(method, g, pointsTo));
+		}
 	}
 
 	@Override

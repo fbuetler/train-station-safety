@@ -193,7 +193,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * @param	inWrapper			incoming numerical state
 	 * @param	op					statement to be analyzed
 	 * @param	fallOutWrappers 	is a one-element list
-	 * @param	branchOutWrappers 	contains a FlowSet for each non-fall-through successor
+	 * @param	branchOutWrappers 	contains a NumericalStateWrapper for each non-fall-through successor
 	 */
 	protected void flowThrough(NumericalStateWrapper inWrapper, Unit op, List<NumericalStateWrapper> fallOutWrappers,
 			List<NumericalStateWrapper> branchOutWrappers) {
@@ -311,7 +311,6 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		}
 		loopHeadState.put(jIfStmt,inWrapper); 
 		
-		boolean branches = true; // True iff we might take branch
 		Value condition = jIfStmt.getCondition();
 		Linexpr1 expr = combSides(condition, false);
 		Linexpr1 exprInv = combSides(condition,true);
@@ -335,12 +334,12 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		
 		branchOutWrapper.set(inWrapper.get().meetCopy(man, aprCondition));	// Condition holds
 		fallOutWrapper.set(inWrapper.get().meetCopy(man, aprConditionInv)); // Condition doesn't hold
-		branches = !branchOutWrapper.get().isBottom(man); // False <=> Definitely doesn't branch
+		boolean branches = !branchOutWrapper.get().isBottom(man); // False <=> Definitely doesn't branch
 		
 		
-		if(branches) { // (lmeinen) Is this condition correct? Unsure due to most method descriptions talking about over-approximations
-			loopHeads.get(jIfStmt).value = 0; // Reset number of iterations. Prevents loss of precision in case of nested loops.
-		}
+//		if(!branches) { // (lmeinen) Is this condition correct? Unsure due to most method descriptions talking about over-approximations
+//			loopHeads.get(jIfStmt).value = 0; // Reset number of iterations. Prevents loss of precision in case of nested loops.
+//		}
 	}
 
 	/**
