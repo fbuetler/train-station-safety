@@ -1,6 +1,7 @@
 package ch.ethz.rse.numerical;
 
 import java.util.HashMap;
+import java.util.LinkedList; // NOTE: NEW IMPORT --> IS THIS ALLOWED?
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -26,6 +27,7 @@ import apron.Texpr1VarNode;
 import ch.ethz.rse.pointer.PointsToInitializer;
 import ch.ethz.rse.pointer.TrainStationInitializer;
 import ch.ethz.rse.utils.Constants;
+import ch.ethz.rse.verify.CallToArrive;
 import ch.ethz.rse.verify.EnvironmentGenerator;
 import soot.ArrayType;
 import soot.DoubleType;
@@ -87,6 +89,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * Previously seen abstract state for each loop head
 	 */
 	private HashMap<Unit, NumericalStateWrapper> loopHeadState = new HashMap<Unit, NumericalStateWrapper>();
+	private List<CallToArrive> arrivals = new LinkedList<CallToArrive>();
 
 	/**
 	 * Numerical abstract domain to use for analysis: Convex polyhedra
@@ -248,9 +251,10 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 			} else if (s instanceof JIfStmt) {
 				// handle if
 				JIfStmt jIfStmt = (JIfStmt) s;
-				handleIf(jIfStmt, fallOutWrapper, branchOutWrapper);
+				handleIf(jIfStmt, inWrapper, fallOutWrapper, branchOutWrapper);
 			} else if (s instanceof JInvokeStmt && ((JInvokeStmt) s).getInvokeExpr() instanceof JVirtualInvokeExpr) {
 				// handle invocations
+				
 				JInvokeStmt jInvStmt = (JInvokeStmt) s;
 				handleInvoke(jInvStmt, fallOutWrapper);
 			}
@@ -270,7 +274,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 
 	/**
 	 * 
-	 * Handle method invocations
+	 * Handle method invocations. Only arrive method is invoked
 	 * 
 	 * example input: virtualinvoke $r2.<ch.ethz.rse.TrainStation: void arrive(int)>(i0) <Top>
 	 * 
@@ -281,7 +285,8 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * @throws ApronException	
 	 */
 	private void handleInvoke(JInvokeStmt jInvStmt, NumericalStateWrapper fallOutWrapper) throws ApronException {
-		// TODO: FILL THIS OUT
+		CallToArrive arrival = new CallToArrive(this.method, (JVirtualInvokeExpr) jInvStmt.getInvokeExpr(), this, fallOutWrapper);
+		arrivals.add(arrival);
 	}
 	
 	/**
@@ -291,7 +296,6 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * 
 	 * example input: if i0 > 10 goto return <Top>
 	 * 
-	 * TODO: Need to change loopHeads and loopHeadState (compare stmt with loophead) and widen when threshold reached
 	 * TODO: Make pretty, eliminate excessive copies
 	 * NOTE: When widening, need to carefully choose outgoing numerical states such that fixed-point can be reached
 	 * 
@@ -300,9 +304,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * @param branchOutWrapper	Numerical state if branch condition evaluates to true
 	 * @throws ApronException	
 	 */
-	private void handleIf(JIfStmt jIfStmt, NumericalStateWrapper fallOutWrapper, NumericalStateWrapper branchOutWrapper) throws ApronException {
-		// TODO: FILL THIS OUT
-		NumericalStateWrapper inWrapper = fallOutWrapper.copy();
+	private void handleIf(JIfStmt jIfStmt, NumericalStateWrapper inWrapper, NumericalStateWrapper fallOutWrapper, NumericalStateWrapper branchOutWrapper) throws ApronException {
 		int iter = loopHeads.get(jIfStmt).increment();
 		if(iter > WIDENING_THRESHOLD) {
 			NumericalStateWrapper prevState = loopHeadState.get(jIfStmt);
@@ -332,11 +334,15 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 			throw new ApronException();
 		}
 		
-		branchOutWrapper.set(inWrapper.get().meetCopy(man, aprCondition));	// Condition holds
-		fallOutWrapper.set(inWrapper.get().meetCopy(man, aprConditionInv)); // Condition doesn't hold
-		boolean branches = !branchOutWrapper.get().isBottom(man); // False <=> Definitely doesn't branch
-		
-		
+		// (lmeinen) Not sure when these wrappers are initialized by Soot. Any ideas?
+		if(branchOutWrapper != null) {
+			branchOutWrapper.set(inWrapper.get().meetCopy(man, aprCondition));	// Condition holds			
+		}
+		if(fallOutWrapper != null) {
+			fallOutWrapper.set(inWrapper.get().meetCopy(man, aprConditionInv)); // Condition doesn't hold			
+		}
+				
+//		boolean branches = !branchOutWrapper.get().isBottom(man); // False <=> Definitely doesn't branch
 //		if(!branches) { // (lmeinen) Is this condition correct? Unsure due to most method descriptions talking about over-approximations
 //			loopHeads.get(jIfStmt).value = 0; // Reset number of iterations. Prevents loss of precision in case of nested loops.
 //		}
@@ -409,7 +415,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * TODO: Make pretty
 	 * 
 	 * @param Conditional expression to be turned into Apron expression
-	 * @param Do we need the inverse expression (useful when wanting the inverse of a condition without painfully inverting its coefficients)
+	 * @param Do we need the inverse expression (useful when you want to obtain the inverse of a condition without painfully inverting its coefficients)
 	 */
 	private Linexpr1 combSides(Value condition, boolean inverse) {
 		Value left = ((BinopExpr) condition).getOp1();

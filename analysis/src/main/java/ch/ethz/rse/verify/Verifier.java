@@ -61,10 +61,9 @@ public class Verifier extends AVerifier {
 	}
 
 	private void runNumericalAnalysis() {
-		// TODO (flbuetle) start analysis here and then only read results for the specific cases from it
 		for(SootMethod method : this.c.getMethods()) {
 			UnitGraph g = new BriefUnitGraph(method.getActiveBody());
-			numericalAnalysis.put(method, new NumericalAnalysis(method, g, pointsTo));
+			this.numericalAnalysis.put(method, new NumericalAnalysis(method, g, this.pointsTo));
 		}
 	}
 
