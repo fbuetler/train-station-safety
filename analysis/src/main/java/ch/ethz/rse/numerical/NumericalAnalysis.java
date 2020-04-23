@@ -94,8 +94,9 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * We apply widening after updating the state at a given merge point for the
 	 * {@link WIDENING_THRESHOLD}th time
 	 * 
-	 * (lmeinen) We could probably increase precision by increasing this threshold, at the cost of runtime
-	 * (lmeinen) Should we reset the number of times a head is met when the branch falls through 100%, e.g. for nested loops?
+	 * (lmeinen) We could probably increase precision by increasing this threshold,
+	 * at the cost of runtime (lmeinen) Should we reset the number of times a head
+	 * is met when the branch falls through 100%, e.g. for nested loops?
 	 */
 	private static final int WIDENING_THRESHOLD = 6;
 
@@ -165,7 +166,8 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 
 	@Override
 	// merge joins two out sets to make a new in set
-	protected void merge(Unit succNode, NumericalStateWrapper in1, NumericalStateWrapper in2, NumericalStateWrapper out) {
+	protected void merge(Unit succNode, NumericalStateWrapper in1, NumericalStateWrapper in2,
+			NumericalStateWrapper out) {
 		logger.debug("in merge: " + succNode);
 
 		logger.debug("join: {} with {}", in1, in2);
@@ -182,15 +184,17 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 
 	@Override
 	/**
-	 * "Brains" of the analysis. Determines the OUT state depending on the IN state for one Unit.
-	 * Need to differentiate between branch and fall-through OUT set.
+	 * "Brains" of the analysis. Determines the OUT state depending on the IN state
+	 * for one Unit. Need to differentiate between branch and fall-through OUT set.
 	 * 
-	 * TODO: (lmeinen) I believe we still need to actually modify the OUT sets to contain updated values?
+	 * TODO: (lmeinen) I believe we still need to actually modify the OUT sets to
+	 * contain updated values?
 	 * 
-	 * @param	inWrapper			incoming numerical state
-	 * @param	op					statement to be analyzed
-	 * @param	fallOutWrappers 	is a one-element list
-	 * @param	branchOutWrappers 	contains a NumericalStateWrapper for each non-fall-through successor
+	 * @param inWrapper         incoming numerical state
+	 * @param op                statement to be analyzed
+	 * @param fallOutWrappers   is a one-element list
+	 * @param branchOutWrappers contains a NumericalStateWrapper for each
+	 *                          non-fall-through successor
 	 */
 	protected void flowThrough(NumericalStateWrapper inWrapper, Unit op, List<NumericalStateWrapper> fallOutWrappers,
 			List<NumericalStateWrapper> branchOutWrappers) {
@@ -244,12 +248,12 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 				}
 			} else if (s instanceof JIfStmt) {
 				// handle if
-				
+
 				JIfStmt jIfStmt = (JIfStmt) s;
 				handleIf(jIfStmt, inWrapper, fallOutWrapper, branchOutWrapper);
 			} else if (s instanceof JInvokeStmt && ((JInvokeStmt) s).getInvokeExpr() instanceof JVirtualInvokeExpr) {
 				// handle invocations
-				
+
 				JInvokeStmt jInvStmt = (JInvokeStmt) s;
 				handleInvoke(jInvStmt, fallOutWrapper);
 			}
@@ -273,83 +277,92 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * 
 	 * Handle method invocations. Only arrive method is invoked
 	 * 
-	 * example input: virtualinvoke $r2.<ch.ethz.rse.TrainStation: void arrive(int)>(i0) <Top>
+	 * example input: virtualinvoke $r2.<ch.ethz.rse.TrainStation: void
+	 * arrive(int)>(i0) <Top>
 	 * 
-	 * @param jInvStmt			Statement to be handled (scope of this project: only invoke stmts to arrive()
-	 * @param fallOutWrapper	Numerical state at time of invocation
-	 * @throws ApronException	
+	 * @param jInvStmt       Statement to be handled (scope of this project: only
+	 *                       invoke stmts to arrive()
+	 * @param fallOutWrapper Numerical state at time of invocation
+	 * @throws ApronException
 	 */
 	private void handleInvoke(JInvokeStmt jInvStmt, NumericalStateWrapper fallOutWrapper) throws ApronException {
-		CallToArrive arrival = new CallToArrive(this.method, (JVirtualInvokeExpr) jInvStmt.getInvokeExpr(), this, fallOutWrapper);
+		CallToArrive arrival = new CallToArrive(this.method, (JVirtualInvokeExpr) jInvStmt.getInvokeExpr(), this,
+				fallOutWrapper);
 		arrivals.add(arrival);
 	}
-	
+
 	/**
 	 * 
 	 * Handle branches: Need to differentiate between taken and fall-through branch
-	 * Condition can be of type ==, >=, >, <=, <, or !=, with LHS and RHS being constants or local variables
+	 * Condition can be of type ==, >=, >, <=, <, or !=, with LHS and RHS being
+	 * constants or local variables
 	 * 
 	 * example input: if i0 > 10 goto return <Top>
 	 * 
-	 * TODO: Make pretty, eliminate excessive copies
-	 * NOTE: When widening, need to carefully choose outgoing numerical states such that fixed-point can be reached
+	 * TODO: Make pretty, eliminate excessive copies NOTE: When widening, need to
+	 * carefully choose outgoing numerical states such that fixed-point can be
+	 * reached
 	 * 
-	 * @param jIfStmt			Statement to be handled
-	 * @param fallOutWrapper	Numerical state if branch condition evaluates to false
-	 * @param branchOutWrapper	Numerical state if branch condition evaluates to true
-	 * @throws ApronException	
+	 * @param jIfStmt          Statement to be handled
+	 * @param fallOutWrapper   Numerical state if branch condition evaluates to
+	 *                         false
+	 * @param branchOutWrapper Numerical state if branch condition evaluates to true
+	 * @throws ApronException
 	 */
-	private void handleIf(JIfStmt jIfStmt, NumericalStateWrapper inWrapper, NumericalStateWrapper fallOutWrapper, NumericalStateWrapper branchOutWrapper) throws ApronException {
-		assert(fallOutWrapper != null && branchOutWrapper != null);
-		
+	private void handleIf(JIfStmt jIfStmt, NumericalStateWrapper inWrapper, NumericalStateWrapper fallOutWrapper,
+			NumericalStateWrapper branchOutWrapper) throws ApronException {
+		assert (fallOutWrapper != null && branchOutWrapper != null);
+
 		if (loopHeads.containsKey(jIfStmt)) { // decide if its an if or loop statement
 			int iter = loopHeads.get(jIfStmt).increment();
-			if(iter > WIDENING_THRESHOLD) {
+			if (iter > WIDENING_THRESHOLD) {
 				NumericalStateWrapper prevState = loopHeadState.get(jIfStmt);
 				inWrapper = prevState.widen(inWrapper);
 			}
 		}
-		
+
 		// Need the copy because Soot apparently reuses the passed inWrapper object
-		// --> Up until now we needed to widen twice, the first one to create our own copy of the object,
-		// 	   the second to actually obtain a fixpoint
-		loopHeadState.put(jIfStmt,inWrapper.copy()); 
-		
+		// --> Up until now we needed to widen twice, the first one to create our own
+		// copy of the object,
+		// the second to actually obtain a fixpoint
+		loopHeadState.put(jIfStmt, inWrapper.copy());
+
 		Value condition = jIfStmt.getCondition();
 		Linexpr1 expr = combSides(condition, false);
-		Linexpr1 exprInv = combSides(condition,true);
+		Linexpr1 exprInv = combSides(condition, true);
 		Lincons1 aprCondition, aprConditionInv;
-		
-		if(condition instanceof JEqExpr) {
-			aprCondition = new Lincons1(Lincons1.EQ,expr);
-			aprConditionInv = new Lincons1(Lincons1.DISEQ,expr);
-		} else if(condition instanceof JGeExpr || condition instanceof JLeExpr) {
-			aprCondition = new Lincons1(Lincons1.SUPEQ,expr);
-			aprConditionInv = new Lincons1(Lincons1.SUP,exprInv);
-		} else if(condition instanceof JGtExpr || condition instanceof JLtExpr) {
-			aprCondition = new Lincons1(Lincons1.SUP,expr);
-			aprConditionInv = new Lincons1(Lincons1.SUPEQ,exprInv);
-		} else if(condition instanceof JNeExpr) {
-			aprCondition = new Lincons1(Lincons1.DISEQ,expr);
-			aprConditionInv = new Lincons1(Lincons1.EQ,expr);
+
+		if (condition instanceof JEqExpr) {
+			aprCondition = new Lincons1(Lincons1.EQ, expr);
+			aprConditionInv = new Lincons1(Lincons1.DISEQ, expr);
+		} else if (condition instanceof JGeExpr || condition instanceof JLeExpr) {
+			aprCondition = new Lincons1(Lincons1.SUPEQ, expr);
+			aprConditionInv = new Lincons1(Lincons1.SUP, exprInv);
+		} else if (condition instanceof JGtExpr || condition instanceof JLtExpr) {
+			aprCondition = new Lincons1(Lincons1.SUP, expr);
+			aprConditionInv = new Lincons1(Lincons1.SUPEQ, exprInv);
+		} else if (condition instanceof JNeExpr) {
+			aprCondition = new Lincons1(Lincons1.DISEQ, expr);
+			aprConditionInv = new Lincons1(Lincons1.EQ, expr);
 		} else {
 			throw new ApronException();
 		}
-		
+
 		// See L328 of ApronTest to see how meetCopy works
-		if(branchOutWrapper != null) {
-			branchOutWrapper.set(inWrapper.get().meetCopy(man, aprCondition));	// Condition holds			
+		if (branchOutWrapper != null) {
+			branchOutWrapper.set(inWrapper.get().meetCopy(man, aprCondition)); // Condition holds
 		}
-		if(fallOutWrapper != null) {
-			fallOutWrapper.set(inWrapper.get().meetCopy(man, aprConditionInv)); // Condition doesn't hold			
+		if (fallOutWrapper != null) {
+			fallOutWrapper.set(inWrapper.get().meetCopy(man, aprConditionInv)); // Condition doesn't hold
 		}
-				
-		/* 
-		 * If we don't branch back for sure, reset No of loop iterations to prevent loss of precision for inner loops
-		 * --> Doesn't work! When there are several loop conditions, e.g. 0<=j && j<10, Soot seperates it into two seperate if
-		 * stmts, where only the first one is counted as a loop, i.e. when the first one is trivially true (branchOut always empty)
-		 * we never widen
-		*/
+
+		/*
+		 * If we don't branch back for sure, reset No of loop iterations to prevent loss
+		 * of precision for inner loops --> Doesn't work! When there are several loop
+		 * conditions, e.g. 0<=j && j<10, Soot seperates it into two seperate if stmts,
+		 * where only the first one is counted as a loop, i.e. when the first one is
+		 * trivially true (branchOut always empty) we never widen
+		 */
 //		if(branchOutWrapper.get().isBottom(man) && loopHeads.containsKey(jIfStmt)) {
 //			loopHeads.get(jIfStmt).value = 0;
 //		}
@@ -357,32 +370,35 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 
 	/**
 	 *
-	 * Statements of the sort x = y, x = 5, or x = EXPR, where EXPR is one of the three binary expressions: *, +, or -
-	 * EXPR only uses local variables or constants
+	 * Statements of the sort x = y, x = 5, or x = EXPR, where EXPR is one of the
+	 * three binary expressions: *, +, or - EXPR only uses local variables or
+	 * constants
 	 * 
 	 * example input: <Top> i0 := @parameter0: int
 	 *
-	 * @param outWrapper	Will contain updated numerical state after assignment has been handled
-	 * @param left			LHS of equation, i.e. variable being assigned to
-	 * @param right			RHS of equation, i.e. a variable, a constant, or a binary expression
+	 * @param outWrapper Will contain updated numerical state after assignment has
+	 *                   been handled
+	 * @param left       LHS of equation, i.e. variable being assigned to
+	 * @param right      RHS of equation, i.e. a variable, a constant, or a binary
+	 *                   expression
 	 */
 	private void handleDef(NumericalStateWrapper outWrapper, Value left, Value right) throws ApronException {
 		String varName = ((JimpleLocal) left).getName();
 		Texpr1Node expr;
-		if(right instanceof BinopExpr) {
+		if (right instanceof BinopExpr) {
 			BinopExpr rExpr = (BinopExpr) right;
 			Texpr1Node lArg = Texpr1Node.fromLinexpr1(atomic(rExpr.getOp1()));
 			Texpr1Node rArg = Texpr1Node.fromLinexpr1(atomic(rExpr.getOp2()));
-			
-			if(rExpr instanceof AddExpr) {
+
+			if (rExpr instanceof AddExpr) {
 				// RHS is an addition
-				expr = new Texpr1BinNode(Texpr1BinNode.OP_ADD,lArg,rArg);
-			} else if(rExpr instanceof MulExpr) {
+				expr = new Texpr1BinNode(Texpr1BinNode.OP_ADD, lArg, rArg);
+			} else if (rExpr instanceof MulExpr) {
 				// RHS is a multiplication
-				expr = new Texpr1BinNode(Texpr1BinNode.OP_MUL,lArg,rArg);
+				expr = new Texpr1BinNode(Texpr1BinNode.OP_MUL, lArg, rArg);
 			} else {
 				// RHS is a subtraction
-				expr = new Texpr1BinNode(Texpr1BinNode.OP_SUB,lArg,rArg);
+				expr = new Texpr1BinNode(Texpr1BinNode.OP_SUB, lArg, rArg);
 			}
 		} else {
 			// RHS is a variable, a constant or a parameter
@@ -391,18 +407,19 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		Texpr1Intern value = new Texpr1Intern(env, expr);
 		outWrapper.assign(varName, value);
 	}
-	
+
 	/**
-	 * Changes a value into a linear expression, such that it can be used to create an expression tree
+	 * Changes a value into a linear expression, such that it can be used to create
+	 * an expression tree
 	 * 
-	 * @param val	Value representing either a Local, a Constant or a Parameter
-	 * @return		Linexpr1 representing val
+	 * @param val Value representing either a Local, a Constant or a Parameter
+	 * @return Linexpr1 representing val
 	 * @throws ApronException
 	 */
 	private Linexpr1 atomic(Value value) {
 		Linexpr1 expr = new Linexpr1(env);
 		MpqScalar sclr = new MpqScalar();
-				
+
 		if (value instanceof JimpleLocal) {
 			String varname = ((JimpleLocal) value).getName();
 			sclr.set(1);
@@ -420,34 +437,37 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		}
 		return expr;
 	}
-	
+
 	/**
-	 * Turns Soot expression of the form (left op right) into an Apron expression of the form (left-right op 0)
-	 * Left and right are inverted when op is < or <= due to Apron only offering <>, ==, >, >=
+	 * Turns Soot expression of the form (left op right) into an Apron expression of
+	 * the form (left-right op 0) Left and right are inverted when op is < or <= due
+	 * to Apron only offering <>, ==, >, >=
 	 * 
 	 * TODO: Make pretty
 	 * 
-	 * @param condition	Conditional expression to be turned into Apron expression
-	 * @param inverse 	Do we need the inverse expression (useful when you want to obtain the inverse of a condition without painfully inverting its coefficients)
+	 * @param condition Conditional expression to be turned into Apron expression
+	 * @param inverse   Do we need the inverse expression (useful when you want to
+	 *                  obtain the inverse of a condition without painfully
+	 *                  inverting its coefficients)
 	 */
 	private Linexpr1 combSides(Value condition, boolean inverse) {
 		Value left = ((BinopExpr) condition).getOp1();
 		Value right = ((BinopExpr) condition).getOp2();
-		if(inverse ^ (condition instanceof JLeExpr || condition instanceof JLtExpr)) {
+		if (inverse ^ (condition instanceof JLeExpr || condition instanceof JLtExpr)) {
 			Value tmp = left;
 			left = right;
 			right = tmp;
 		}
 		Linexpr1 expr = new Linexpr1(env);
 		MpqScalar sclr = new MpqScalar();
-		
+
 		// we store left - right in expr
 		if (left instanceof JimpleLocal) {
-			String varNameLeft = ((JimpleLocal)left).getName();
+			String varNameLeft = ((JimpleLocal) left).getName();
 			sclr.set(1);
 			expr.setCoeff(varNameLeft, sclr);
 			if (right instanceof JimpleLocal) { // variable - variable
-				String varNameRight = ((JimpleLocal)right).getName();
+				String varNameRight = ((JimpleLocal) right).getName();
 				if (varNameLeft == varNameRight) {
 					sclr.set(0);
 					expr.setCst(sclr);
@@ -469,7 +489,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		} else if (left instanceof IntConstant) {
 			int valLeft = ((IntConstant) left).value;
 			if (right instanceof JimpleLocal) { // value - variable
-				String varNameRight = ((JimpleLocal)right).getName();
+				String varNameRight = ((JimpleLocal) right).getName();
 				sclr.set(valLeft);
 				expr.setCst(sclr);
 				sclr.set(-1);
@@ -492,7 +512,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		} else {
 			logger.warn("unhandled case for LHS of a condition");
 		}
-		
+
 		return expr;
 	}
 

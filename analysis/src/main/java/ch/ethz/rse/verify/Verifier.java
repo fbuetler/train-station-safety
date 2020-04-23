@@ -59,14 +59,15 @@ public class Verifier extends AVerifier {
 	}
 
 	private void runNumericalAnalysis() {
-		for(SootMethod method : this.c.getMethods()) {
+		for (SootMethod method : this.c.getMethods()) {
 			if (method.getName().contains("<init>")) {
 				// skip constructor of the class
 				continue;
 			}
-			
+
 			logger.debug(method.getActiveBody().toString());
-			this.numericalAnalysis.put(method, new NumericalAnalysis(method, SootHelper.getUnitGraph(method), this.pointsTo));
+			this.numericalAnalysis.put(method,
+					new NumericalAnalysis(method, SootHelper.getUnitGraph(method), this.pointsTo));
 		}
 	}
 
@@ -82,7 +83,7 @@ public class Verifier extends AVerifier {
 	public boolean checkTrackInRange() {
 		logger.debug("Analyzing checkTrackInRange for {}", c.getName());
 		// TODO: FILL THIS OUT
-		
+
 		return true;
 	}
 
@@ -90,9 +91,8 @@ public class Verifier extends AVerifier {
 	public boolean checkNoCrash() {
 		logger.debug("Analyzing checkNoCrash for {}", c.getName());
 		// TODO: FILL THIS OUT
-		
+
 		return true;
 	}
-
 
 }

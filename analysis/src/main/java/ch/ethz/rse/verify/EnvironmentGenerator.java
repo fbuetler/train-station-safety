@@ -26,7 +26,7 @@ import soot.util.Chain;
  *
  */
 public class EnvironmentGenerator {
-	
+
 	private static final Logger logger = LoggerFactory.getLogger(EnvironmentGenerator.class);
 
 	private final SootMethod method;
@@ -53,7 +53,7 @@ public class EnvironmentGenerator {
 		for (Local var : method.getActiveBody().getLocals()) {
 			addToInts(var);
 		}
-		
+
 		// add parameters
 		logger.debug("adding method parameters");
 		for (Local var : method.getActiveBody().getParameterLocals()) {
@@ -64,7 +64,7 @@ public class EnvironmentGenerator {
 		String reals[] = {}; // we are not analyzing real numbers
 		this.env = new Environment(ints_arr, reals);
 	}
-	
+
 	private void addToInts(Local var) {
 		String varname = var.getName();
 		if (SootHelper.isIntValue(var)) {
@@ -72,7 +72,8 @@ public class EnvironmentGenerator {
 				logger.debug("Adding variable to env: {}", varname);
 				this.ints.add(varname);
 			} else {
-				logger.error("Illegal duplication of variable declaration found: {} (current declarations: {})", varname, ints.toString());
+				logger.error("Illegal duplication of variable declaration found: {} (current declarations: {})",
+						varname, ints.toString());
 			}
 		} else {
 			logger.warn("Non integer typed variable found: {} (with type: {})", var, var.getType());
