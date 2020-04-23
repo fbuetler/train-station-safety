@@ -103,7 +103,7 @@ public class Verifier extends AVerifier {
 				Value arg = invokeExpr.getArg(0);
 				nonNegative &= checkConstraint(0, Integer.MAX_VALUE, arg, state, na.man);
 			}
-//			return nonNegative;
+			return nonNegative;
 		}
 		return false;
 	}
@@ -180,9 +180,63 @@ public class Verifier extends AVerifier {
 	@Override
 	public boolean checkNoCrash() {
 		logger.debug("Analyzing checkNoCrash for {}", c.getName());
-		// TODO: FILL THIS OUT
 
-		return true;
+		for (SootMethod method : this.c.getMethods()) {
+			if (method.getName().contains("<init>")) {
+				// skip constructor of the class
+				continue;
+			}
+
+			NumericalAnalysis na = numericalAnalysis.get(method);
+			// TODO (flbuetle) rm duplicate calls in arrivals: See comment in numericalAnalysis 
+			logger.debug("all arrivals: {}", na.arrivals);
+			boolean noCrash = true;
+			int arrivalsSize = na.arrivals.size();
+			for (int i = 0; i < arrivalsSize; i++) {
+				for (int j = i + 1; j < arrivalsSize; j++) { // ensures no two calls are compared twice
+					CallToArrive outerCtA = na.arrivals.get(i);
+					CallToArrive innerCtA = na.arrivals.get(j);
+
+					Abstract1 outerState = outerCtA.state.get();
+					Abstract1 innerState = innerCtA.state.get();
+
+					Value outerArg = outerCtA.invokeExpr.getArg(0);
+					Value innerArg = innerCtA.invokeExpr.getArg(0);
+
+					logger.debug("innter state: {}", innerState.toString());
+					logger.debug("inner arg: {}", innerArg);
+
+					logger.debug("outer state: {}", outerState.toString());
+					logger.debug("outer arg: {}", outerArg);
+
+					if (outerArg instanceof JimpleLocal) {
+						if (innerArg instanceof JimpleLocal) {
+							// TODO (flbuetle) if their intervals overlap: return false
+						} else if (innerArg instanceof IntConstant) {
+							int innerVal = ((IntConstant) innerArg).value;
+							noCrash &= checkConstraint(innerVal, innerVal, outerArg, outerState, na.man);
+						} else {
+							logger.error("unsupported type in checkNoCrash: {}", innerArg);
+						}
+					} else if (outerArg instanceof IntConstant) {
+						int outerVal = ((IntConstant) outerArg).value;
+						if (innerArg instanceof JimpleLocal) {
+							noCrash &= checkConstraint(outerVal, outerVal, innerArg, innerState, na.man);
+						} else if (innerArg instanceof IntConstant) {
+							int innerVal = ((IntConstant) innerArg).value;
+							noCrash &= outerVal != innerVal;
+						} else {
+							logger.error("unsupported type in checkNoCrash: {}", innerArg);
+						}
+					} else {
+						logger.error("unsupported type in checkNoCrash: {}", outerArg);
+					}
+
+				}
+			}
+			return noCrash;
+		}
+		return false;
 	}
 
 }
