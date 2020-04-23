@@ -9,7 +9,11 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import apron.Abstract1;
+import apron.ApronException;
 import apron.Environment;
+import apron.Interval;
+import apron.Manager;
 import apron.MpqScalar;
 import apron.Tcons1;
 import apron.Texpr1BinNode;
@@ -29,8 +33,12 @@ import soot.SootHelper;
 import soot.SootMethod;
 import soot.Unit;
 import soot.Value;
+import soot.jimple.IntConstant;
+import soot.jimple.VirtualInvokeExpr;
 import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JVirtualInvokeExpr;
+import soot.jimple.internal.JimpleLocal;
+import soot.jimple.spark.pag.Node;
 
 /**
  * Main class handling verification
@@ -74,17 +82,99 @@ public class Verifier extends AVerifier {
 	@Override
 	public boolean checkTrackNonNegative() {
 		logger.debug("Analyzing checkTrackNonNegative for {}", c.getName());
-		// TODO FILL THIS OUT
 
-		return true;
+		for (SootMethod method : this.c.getMethods()) {
+			if (method.getName().contains("<init>")) {
+				// skip constructor of the class
+				continue;
+			}
+
+			NumericalAnalysis na = numericalAnalysis.get(method);
+
+			boolean nonNegative = true;
+			for (CallToArrive callToArrive : na.arrivals) {
+				logger.debug("A callToArrive: {}", callToArrive);
+				Abstract1 state = callToArrive.state.get();
+				if (state == null) {
+					logger.error("CallToArrive state is empty: {}", callToArrive);
+				}
+
+				VirtualInvokeExpr invokeExpr = callToArrive.invokeExpr;
+				Value arg = invokeExpr.getArg(0);
+				nonNegative &= checkConstraint(0, Integer.MAX_VALUE, arg, state, na.man);
+			}
+//			return nonNegative;
+		}
+		return false;
 	}
 
 	@Override
 	public boolean checkTrackInRange() {
 		logger.debug("Analyzing checkTrackInRange for {}", c.getName());
-		// TODO: FILL THIS OUT
 
-		return true;
+		for (SootMethod method : this.c.getMethods()) {
+			if (method.getName().contains("<init>")) {
+				// skip constructor of the class
+				continue;
+			}
+
+			NumericalAnalysis na = numericalAnalysis.get(method);
+			boolean inRange = true;
+			for (CallToArrive callToArrive : na.arrivals) {
+				Abstract1 state = callToArrive.state.get();
+				if (state == null) {
+					logger.error("CallToArrive state is empty: {}", callToArrive);
+				}
+
+				VirtualInvokeExpr invokeExpr = callToArrive.invokeExpr;
+				Value arg = callToArrive.invokeExpr.getArg(0);
+
+				Value base = invokeExpr.getBase();
+				Collection<Node> nodes = pointsTo.getNodes((JimpleLocal) base);
+				if (nodes.size() > 1) {
+					logger.warn("Size of objects the variable '{}' points to has size {} and contains {}",
+							base.toString(), nodes.size(), nodes.toString());
+					// TODO (flbuetle) can there be more than one node?
+				}
+				int nTracks = 0;
+				for (Node n : nodes) {
+					TrainStationInitializer tsi = pointsTo.getTSInitializer(n);
+					nTracks = tsi.nTracks;
+				}
+
+				inRange &= checkConstraint(Integer.MIN_VALUE, nTracks - 1, arg, state, na.man);
+			}
+			return inRange;
+		}
+		return false;
+	}
+
+	/*
+	 * checkConstraint checks if the given arg with the allowed interval
+	 * [lowerBound, upperBound] is satisfied in the given state
+	 * 
+	 */
+	private boolean checkConstraint(int lowerBound, int upperBound, Value arg, Abstract1 state, Manager man) {
+		logger.debug("state: {}", state);
+		logger.debug("arg: {}", arg);
+		logger.debug("interval: [{}, {}]", lowerBound, upperBound);
+
+		boolean inInterval = false;
+		if (arg instanceof JimpleLocal) {
+			String varName = ((JimpleLocal) arg).getName();
+			try {
+				inInterval = state.satisfy(man, varName, new Interval(lowerBound, upperBound));
+			} catch (ApronException e) {
+				logger.error("Check for constraint satisfiability threw an exception");
+				e.printStackTrace();
+			}
+		} else if (arg instanceof IntConstant) {
+			int val = ((IntConstant) arg).value;
+			inInterval = lowerBound <= val && val <= upperBound;
+		} else {
+			logger.error("Unhandled arg type in checkConstraint: {}", arg);
+		}
+		return inInterval;
 	}
 
 	@Override
