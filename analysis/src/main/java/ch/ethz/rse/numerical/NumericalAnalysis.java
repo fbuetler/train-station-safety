@@ -242,6 +242,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 				}
 			} else if (s instanceof JIfStmt) {
 				// handle if
+				
 				JIfStmt jIfStmt = (JIfStmt) s;
 				handleIf(jIfStmt, inWrapper, fallOutWrapper, branchOutWrapper);
 			} else if (s instanceof JInvokeStmt && ((JInvokeStmt) s).getInvokeExpr() instanceof JVirtualInvokeExpr) {
@@ -296,6 +297,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 */
 	private void handleIf(JIfStmt jIfStmt, NumericalStateWrapper inWrapper, NumericalStateWrapper fallOutWrapper, NumericalStateWrapper branchOutWrapper) throws ApronException {
 		logger.debug(jIfStmt.toString());
+		assert(fallOutWrapper != null && branchOutWrapper != null);
 		
 		if (loopHeads.containsKey(jIfStmt)) { // decide if its an if or loop statement
 			int iter = loopHeads.get(jIfStmt).increment();
@@ -329,6 +331,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 			throw new ApronException();
 		}
 		
+		// See L328 of ApronTest to see how meetCopy works
 		if(branchOutWrapper != null) {
 			branchOutWrapper.set(inWrapper.get().meetCopy(man, aprCondition));	// Condition holds			
 		}
@@ -414,8 +417,8 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * 
 	 * TODO: Make pretty
 	 * 
-	 * @param Conditional expression to be turned into Apron expression
-	 * @param Do we need the inverse expression (useful when you want to obtain the inverse of a condition without painfully inverting its coefficients)
+	 * @param condition	Conditional expression to be turned into Apron expression
+	 * @param inverse 	Do we need the inverse expression (useful when you want to obtain the inverse of a condition without painfully inverting its coefficients)
 	 */
 	private Linexpr1 combSides(Value condition, boolean inverse) {
 		logger.debug("combSides in: {}", condition);
