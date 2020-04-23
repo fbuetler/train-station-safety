@@ -31,8 +31,6 @@ import soot.Unit;
 import soot.Value;
 import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JVirtualInvokeExpr;
-import soot.toolkits.graph.BriefUnitGraph;
-import soot.toolkits.graph.UnitGraph;
 
 /**
  * Main class handling verification
@@ -62,8 +60,13 @@ public class Verifier extends AVerifier {
 
 	private void runNumericalAnalysis() {
 		for(SootMethod method : this.c.getMethods()) {
-			UnitGraph g = new BriefUnitGraph(method.getActiveBody());
-			this.numericalAnalysis.put(method, new NumericalAnalysis(method, g, this.pointsTo));
+			if (method.getName().contains("<init>")) {
+				// skip constructor of the class
+				continue;
+			}
+			
+			logger.debug(method.getActiveBody().toString());
+			this.numericalAnalysis.put(method, new NumericalAnalysis(method, SootHelper.getUnitGraph(method), this.pointsTo));
 		}
 	}
 
@@ -71,24 +74,6 @@ public class Verifier extends AVerifier {
 	public boolean checkTrackNonNegative() {
 		logger.debug("Analyzing checkTrackNonNegative for {}", c.getName());
 		// TODO FILL THIS OUT
-		for (SootMethod m : c.getMethods()) {
-			logger.debug("Analyzing checkTrackNonNegative for {} method {}", c.getName(), m.getName());
-			NumericalAnalysis na = new NumericalAnalysis(m, SootHelper.getUnitGraph(m), pointsTo);
-			
-			// TODO (flbuetle) the following is just something from the soot survival guide
-			for (Unit s : m.getActiveBody().getUnits()) {
-				
-				NumericalStateWrapper fb = na.getFlowBefore(s);
-				NumericalStateWrapper ffa;
-				List<NumericalStateWrapper> bfa;
-				if (s.fallsThrough()) {
-					ffa = na.getFallFlowAfter(s);
-				}
-				if (s.branches()) {
-					bfa = na.getBranchFlowAfter(s);
-				}
-			}
-		}
 
 		return true;
 	}
