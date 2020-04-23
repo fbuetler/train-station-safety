@@ -300,19 +300,20 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * @throws ApronException	
 	 */
 	private void handleIf(JIfStmt jIfStmt, NumericalStateWrapper inWrapper, NumericalStateWrapper fallOutWrapper, NumericalStateWrapper branchOutWrapper) throws ApronException {
-		logger.debug(jIfStmt.toString());
 		assert(fallOutWrapper != null && branchOutWrapper != null);
 		
 		if (loopHeads.containsKey(jIfStmt)) { // decide if its an if or loop statement
 			int iter = loopHeads.get(jIfStmt).increment();
-			// TODO: Widening doesn't work yet, loop still continues after widening!!
 			if(iter > WIDENING_THRESHOLD) {
 				NumericalStateWrapper prevState = loopHeadState.get(jIfStmt);
 				inWrapper = prevState.widen(inWrapper);
 			}
 		}
 		
-		loopHeadState.put(jIfStmt,inWrapper); 
+		// Need the copy because Soot apparently reuses the passed inWrapper object
+		// --> Up until now we needed to widen twice, the first one to create our own copy of the object,
+		// 	   the second to actually obtain a fixpoint
+		loopHeadState.put(jIfStmt,inWrapper.copy()); 
 		
 		Value condition = jIfStmt.getCondition();
 		Linexpr1 expr = combSides(condition, false);
@@ -343,9 +344,14 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 			fallOutWrapper.set(inWrapper.get().meetCopy(man, aprConditionInv)); // Condition doesn't hold			
 		}
 				
-//		boolean branches = !branchOutWrapper.get().isBottom(man); // False <=> Definitely doesn't branch
-//		if(!branches) { // (lmeinen) Is this condition correct? Unsure due to most method descriptions talking about over-approximations
-//			loopHeads.get(jIfStmt).value = 0; // Reset number of iterations. Prevents loss of precision in case of nested loops.
+		/* 
+		 * If we don't branch back for sure, reset No of loop iterations to prevent loss of precision for inner loops
+		 * --> Doesn't work! When there are several loop conditions, e.g. 0<=j && j<10, Soot seperates it into two seperate if
+		 * stmts, where only the first one is counted as a loop, i.e. when the first one is trivially true (branchOut always empty)
+		 * we never widen
+		*/
+//		if(branchOutWrapper.get().isBottom(man) && loopHeads.containsKey(jIfStmt)) {
+//			loopHeads.get(jIfStmt).value = 0;
 //		}
 	}
 
@@ -425,7 +431,6 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * @param inverse 	Do we need the inverse expression (useful when you want to obtain the inverse of a condition without painfully inverting its coefficients)
 	 */
 	private Linexpr1 combSides(Value condition, boolean inverse) {
-		logger.debug("combSides in: {}", condition);
 		Value left = ((BinopExpr) condition).getOp1();
 		Value right = ((BinopExpr) condition).getOp2();
 		if(inverse ^ (condition instanceof JLeExpr || condition instanceof JLtExpr)) {
@@ -488,7 +493,6 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 			logger.warn("unhandled case for LHS of a condition");
 		}
 		
-		logger.debug("combSides out: {}", expr);
 		return expr;
 	}
 
