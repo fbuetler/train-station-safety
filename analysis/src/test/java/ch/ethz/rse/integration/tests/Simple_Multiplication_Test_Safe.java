@@ -12,7 +12,7 @@ public class Simple_Multiplication_Test_Safe {
 		TrainStation s = new TrainStation(27);
 		int i = 3;
 		if (j > 3) {
-			i = 20;
+			i = 5;
 		}
 		int n = 3 * i;
 		s.arrive(n);
