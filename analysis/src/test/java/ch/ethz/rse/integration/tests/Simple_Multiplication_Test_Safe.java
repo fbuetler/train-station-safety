@@ -8,10 +8,13 @@ import ch.ethz.rse.TrainStation;
 // NO_CRASH SAFE
 
 public class Simple_Multiplication_Test_Safe {
-	public static void s1() {
+	public static void s1(int j) {
 		TrainStation s = new TrainStation(27);
-		int n = 2;
-		int m = 3 * n;
-		s.arrive(m);
+		int i = 3;
+		if (j > 3) {
+			i = 20;
+		}
+		int n = 3 * i;
+		s.arrive(n);
 	}
 }
