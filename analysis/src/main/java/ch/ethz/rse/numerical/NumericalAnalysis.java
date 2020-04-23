@@ -390,17 +390,24 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * @return		Linexpr1 representing val
 	 * @throws ApronException
 	 */
-	private Linexpr1 atomic(Value val) {
+	private Linexpr1 atomic(Value value) {
 		Linexpr1 expr = new Linexpr1(env);
-		Scalar sclr = new DoubleScalar();
-		if(SootHelper.isIntValue(val)){
-			// RHS is a constant
-			sclr.set(((IntConstant)val).value);
-			expr.setCst(sclr);
-		} else {
-			// RHS is a local variable
+		MpqScalar sclr = new MpqScalar();
+				
+		if (value instanceof JimpleLocal) {
+			String varname = ((JimpleLocal) value).getName();
 			sclr.set(1);
-			expr.setCoeff(((Local)val).getName(), sclr);
+			expr.setCoeff(varname, sclr);
+		} else if (value instanceof IntConstant) {
+			int val = ((IntConstant) value).value;
+			sclr.set(val);
+			expr.setCst(sclr);
+		} else if (value instanceof ParameterRef) {
+			Interval intv = new Interval();
+			intv.setTop(); // (flbuetle) or where else do we get top from?
+			expr.setCst(intv);
+		} else {
+			logger.warn("unhandled value");
 		}
 		return expr;
 	}
