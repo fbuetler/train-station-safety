@@ -102,11 +102,28 @@ public class PointsToInitializer {
 						}
 					}
 				}
+				
+				// TODO (flbuetle) Track of the form "TrainStation t = s;", where s is of type TrainStation, in pointsTo
+				
 			}
-
-			// TODO populate data structures. (flbuetle) are the more?
 		}
 	}
+	
+	public Map<Node, TrainStationInitializer> getInitializers() {
+		return this.initializers;
+	}
+	
+	public TrainStationInitializer getTSInitializer(Node n) {
+		for (Node node : this.initializers.keySet()) {
+			if (node.equals(n)) {
+				return this.initializers.get(node);
+			}
+		}
+		return null;
+	}
+	
+	public Collection<Node> getNodes(Local base) {
+		return this.pointsTo.getNodes(base);
+	}
 
-	// TODO FILL THIS OUT. (flbuetle) what should go here?
 }
