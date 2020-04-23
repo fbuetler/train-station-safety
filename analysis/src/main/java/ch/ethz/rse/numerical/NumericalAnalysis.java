@@ -169,7 +169,9 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		logger.debug("in merge: " + succNode);
 
 		logger.debug("join: {} with {}", in1, in2);
-		out = in1.join(in2);
+//		out = in1.join(in2);
+		NumericalStateWrapper out_new = in1.join(in2);
+		out_new.copyInto(out);
 	}
 
 	@Override
@@ -255,9 +257,11 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 			// log outcome
 			if (fallOutWrapper != null) {
 				logger.debug(inWrapper.get() + " " + s + " =>[fallout] " + fallOutWrapper);
+				fallOutWrapper.copyInto(fallOutWrappers.get(0));
 			}
 			if (branchOutWrapper != null) {
 				logger.debug(inWrapper.get() + " " + s + " =>[branchout] " + branchOutWrapper);
+				branchOutWrapper.copyInto(branchOutWrappers.get(0));
 			}
 
 		} catch (ApronException e) {
@@ -301,10 +305,10 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		
 		if (loopHeads.containsKey(jIfStmt)) { // decide if its an if or loop statement
 			int iter = loopHeads.get(jIfStmt).increment();
+			// TODO: Widening doesn't work yet, loop still continues after widening!!
 			if(iter > WIDENING_THRESHOLD) {
 				NumericalStateWrapper prevState = loopHeadState.get(jIfStmt);
-				prevState.widen(inWrapper);
-				prevState.copyInto(inWrapper); // New incoming state
+				inWrapper = prevState.widen(inWrapper);
 			}
 		}
 		
