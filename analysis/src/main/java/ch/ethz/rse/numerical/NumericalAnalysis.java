@@ -415,6 +415,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * @param Do we need the inverse expression (useful when you want to obtain the inverse of a condition without painfully inverting its coefficients)
 	 */
 	private Linexpr1 combSides(Value condition, boolean inverse) {
+		logger.debug("combSides in: {}", condition);
 		Value left = ((BinopExpr) condition).getOp1();
 		Value right = ((BinopExpr) condition).getOp2();
 		if(inverse ^ (condition instanceof JLeExpr || condition instanceof JLtExpr)) {
@@ -423,37 +424,61 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 			right = tmp;
 		}
 		Linexpr1 expr = new Linexpr1(env);
-		Scalar sclr = new DoubleScalar();
-		int val = 0;
-		if(SootHelper.isIntValue(left)){
-			val += ((IntConstant) left).value;
-			if(SootHelper.isIntValue(right)) {
-				val -= ((IntConstant) right).value;
-			} else {
-				sclr.set(-1);
-				expr.setCoeff(((Local)right).getName(), sclr);
-			}
-			sclr.set(val);
-			expr.setCst(sclr);
-		} else {
-			String varNameLeft = ((Local)left).getName();
-			val += 1;
-			if(SootHelper.isIntValue(right)) {
-				sclr.set(((IntConstant) right).value);
-				sclr.neg();
-				expr.setCst(sclr);
-			} else {
-				String varNameRight = ((Local)right).getName();
-				if(varNameLeft.equals(varNameRight)) {					
-					val -= 1;
+		MpqScalar sclr = new MpqScalar();
+		
+		// we store left - right in expr
+		if (left instanceof JimpleLocal) {
+			String varNameLeft = ((JimpleLocal)left).getName();
+			sclr.set(1);
+			expr.setCoeff(varNameLeft, sclr);
+			if (right instanceof JimpleLocal) { // variable - variable
+				String varNameRight = ((JimpleLocal)right).getName();
+				if (varNameLeft == varNameRight) {
+					sclr.set(0);
+					expr.setCst(sclr);
 				} else {
 					sclr.set(-1);
 					expr.setCoeff(varNameRight, sclr);
 				}
+			} else if (right instanceof IntConstant) { // variable - value
+				int valRight = ((IntConstant) right).value;
+				sclr.set(-valRight);
+				expr.setCst(sclr);
+			} else if (right instanceof ParameterRef) {
+				Interval intv = new Interval();
+				intv.setTop(); // (flbuetle) or where else do we get top from?
+				expr.setCst(intv);
+			} else {
+				logger.warn("unhandled case for RHS of a condition");
 			}
-			sclr.set(val);
-			expr.setCoeff(varNameLeft, sclr);
+		} else if (left instanceof IntConstant) {
+			int valLeft = ((IntConstant) left).value;
+			if (right instanceof JimpleLocal) { // value - variable
+				String varNameRight = ((JimpleLocal)right).getName();
+				sclr.set(valLeft);
+				expr.setCst(sclr);
+				sclr.set(-1);
+				expr.setCoeff(varNameRight, sclr);
+			} else if (right instanceof IntConstant) { // value - value
+				int valRight = ((IntConstant) right).value;
+				sclr.set(valLeft - valRight);
+				expr.setCst(sclr);
+			} else if (right instanceof ParameterRef) {
+				Interval intv = new Interval();
+				intv.setTop(); // (flbuetle) or where else do we get top from?
+				expr.setCst(intv);
+			} else {
+				logger.warn("unhandled case for RHS of a condition");
+			}
+		} else if (left instanceof ParameterRef) {
+			Interval intv = new Interval();
+			intv.setTop(); // (flbuetle) or where else do we get top from?
+			expr.setCst(intv);
+		} else {
+			logger.warn("unhandled case for LHS of a condition");
 		}
+		
+		logger.debug("combSides out: {}", expr);
 		return expr;
 	}
 
