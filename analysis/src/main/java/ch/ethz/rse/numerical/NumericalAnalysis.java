@@ -81,7 +81,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * Previously seen abstract state for each loop head
 	 */
 	private HashMap<Unit, NumericalStateWrapper> loopHeadState = new HashMap<Unit, NumericalStateWrapper>();
-	private List<CallToArrive> arrivals = new LinkedList<CallToArrive>();
+	public List<CallToArrive> arrivals = new LinkedList<CallToArrive>();
 
 	/**
 	 * Numerical abstract domain to use for analysis: Convex polyhedra
