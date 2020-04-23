@@ -176,7 +176,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	protected void merge(Unit succNode, NumericalStateWrapper in1, NumericalStateWrapper in2, NumericalStateWrapper out) {
 		logger.debug("in merge: " + succNode);
 
-		logger.debug("join: ");
+		logger.debug("join: {} with {}", in1, in2);
 		out = in1.join(in2);
 	}
 
@@ -278,9 +278,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * 
 	 * example input: virtualinvoke $r2.<ch.ethz.rse.TrainStation: void arrive(int)>(i0) <Top>
 	 * 
-	 * TODO: (lmeinen) Inquire regarding possible method invocations (i.e. just arrive or also other methods possible?)
-	 * 
-	 * @param jInvStmt			Statement to be handled
+	 * @param jInvStmt			Statement to be handled (scope of this project: only invoke stmts to arrive()
 	 * @param fallOutWrapper	Numerical state at time of invocation
 	 * @throws ApronException	
 	 */
@@ -334,7 +332,6 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 			throw new ApronException();
 		}
 		
-		// (lmeinen) Not sure when these wrappers are initialized by Soot. Any ideas?
 		if(branchOutWrapper != null) {
 			branchOutWrapper.set(inWrapper.get().meetCopy(man, aprCondition));	// Condition holds			
 		}
@@ -389,7 +386,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	/**
 	 * Changes a value into a linear expression, such that it can be used to create an expression tree
 	 * 
-	 * @param val	Value representing either a Local, or a Constant
+	 * @param val	Value representing either a Local, a Constant or a Parameter
 	 * @return		Linexpr1 representing val
 	 * @throws ApronException
 	 */
