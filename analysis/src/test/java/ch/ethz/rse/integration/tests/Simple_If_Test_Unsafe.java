@@ -25,5 +25,6 @@ public class Simple_If_Test_Unsafe {
 			i = 27;
 		}
 		s.arrive(i);
+		s.arrive(1);
 	}
 }
