@@ -4,6 +4,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.Iterables;
 
 import apron.Environment;
@@ -12,6 +15,7 @@ import ch.ethz.rse.pointer.TrainStationInitializer;
 import soot.IntegerType;
 import soot.Local;
 import soot.SootMethod;
+import soot.SootHelper;
 import soot.Value;
 import soot.jimple.ParameterRef;
 import soot.jimple.internal.JimpleLocal;
@@ -22,6 +26,8 @@ import soot.util.Chain;
  *
  */
 public class EnvironmentGenerator {
+	
+	private static final Logger logger = LoggerFactory.getLogger(EnvironmentGenerator.class);
 
 	private final SootMethod method;
 	private final PointsToInitializer pointsTo;
@@ -42,25 +48,35 @@ public class EnvironmentGenerator {
 		this.method = method;
 		this.pointsTo = pointsTo;
 
-		// populate this.ints
+		// add variables
+		logger.debug("adding local variables");
 		for (Local var : method.getActiveBody().getLocals()) {
-			String varname = var.getName();
-			if (var instanceof IntegerType) {
-				if (!ints.contains(varname)) {
-					ints.add(varname);
-				} else {
-					// TODO	(flbuetle) we dont expect duplicates here. maybe panic?
-					//		(lmeinen) Only occurs when testcases wrong, which is a pain to debug --> Super, duper clear custom exception
-				}
-			}
+			addToInts(var);
 		}
-
-		// TODO FILL THIS OUT.	(flbuetle) what else? 
-		//						(lmeinen) Probably list of CallToArrive objects? Or should this be stored in PointsToInitializer?
+		
+		// add parameters
+		logger.debug("adding method parameters");
+		for (Local var : method.getActiveBody().getParameterLocals()) {
+			addToInts(var);
+		}
 
 		String ints_arr[] = Iterables.toArray(this.ints, String.class);
 		String reals[] = {}; // we are not analyzing real numbers
 		this.env = new Environment(ints_arr, reals);
+	}
+	
+	private void addToInts(Local var) {
+		String varname = var.getName();
+		if (SootHelper.isIntValue(var)) {
+			if (!this.ints.contains(varname)) {
+				logger.debug("Adding variable to env: {}", varname);
+				this.ints.add(varname);
+			} else {
+				logger.error("Illegal duplication of variable declaration found: {} (current declarations: {})", varname, ints.toString());
+			}
+		} else {
+			logger.warn("Non integer typed variable found: {} (with type: {})", var, var.getType());
+		}
 	}
 
 	public Environment getEnvironment() {
