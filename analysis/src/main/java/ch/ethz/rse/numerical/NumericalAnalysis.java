@@ -303,12 +303,17 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * @throws ApronException	
 	 */
 	private void handleIf(JIfStmt jIfStmt, NumericalStateWrapper inWrapper, NumericalStateWrapper fallOutWrapper, NumericalStateWrapper branchOutWrapper) throws ApronException {
-		int iter = loopHeads.get(jIfStmt).increment();
-		if(iter > WIDENING_THRESHOLD) {
-			NumericalStateWrapper prevState = loopHeadState.get(jIfStmt);
-			prevState.widen(inWrapper);
-			prevState.copyInto(inWrapper); // New incoming state
+		logger.debug(jIfStmt.toString());
+		
+		if (loopHeads.containsKey(jIfStmt)) { // decide if its an if or loop statement
+			int iter = loopHeads.get(jIfStmt).increment();
+			if(iter > WIDENING_THRESHOLD) {
+				NumericalStateWrapper prevState = loopHeadState.get(jIfStmt);
+				prevState.widen(inWrapper);
+				prevState.copyInto(inWrapper); // New incoming state
+			}
 		}
+		
 		loopHeadState.put(jIfStmt,inWrapper); 
 		
 		Value condition = jIfStmt.getCondition();
