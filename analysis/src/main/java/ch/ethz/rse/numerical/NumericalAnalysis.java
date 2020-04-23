@@ -357,8 +357,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * @param right			RHS of equation, i.e. a variable, a constant, or a binary expression
 	 */
 	private void handleDef(NumericalStateWrapper outWrapper, Value left, Value right) throws ApronException {
-		String varName = ((Local) left).getName();
-		Texpr1Intern value;
+		String varName = ((JimpleLocal) left).getName();
 		Texpr1Node expr;
 		if(right instanceof BinopExpr) {
 			BinopExpr rExpr = (BinopExpr) right;
@@ -376,10 +375,10 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 				expr = new Texpr1BinNode(Texpr1BinNode.OP_SUB,lArg,rArg);
 			}
 		} else {
-			// RHS is a variable or a constant
+			// RHS is a variable, a constant or a parameter
 			expr = Texpr1Node.fromLinexpr1(atomic(right));
 		}
-		value = new Texpr1Intern(env, expr);
+		Texpr1Intern value = new Texpr1Intern(env, expr);
 		outWrapper.assign(varName, value);
 	}
 	
