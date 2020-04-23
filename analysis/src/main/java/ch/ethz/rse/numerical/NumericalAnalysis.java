@@ -286,6 +286,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * @throws ApronException
 	 */
 	private void handleInvoke(JInvokeStmt jInvStmt, NumericalStateWrapper fallOutWrapper) throws ApronException {
+		// TODO (flbuetle) currently we add up to WIDENING_THRESHOLD+1 times a CallToArrive if arrive is called in a loop body
 		CallToArrive arrival = new CallToArrive(this.method, (JVirtualInvokeExpr) jInvStmt.getInvokeExpr(), this,
 				fallOutWrapper);
 		arrivals.add(arrival);
@@ -442,8 +443,6 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * Turns Soot expression of the form (left op right) into an Apron expression of
 	 * the form (left-right op 0) Left and right are inverted when op is < or <= due
 	 * to Apron only offering <>, ==, >, >=
-	 * 
-	 * TODO: Make pretty
 	 * 
 	 * @param condition Conditional expression to be turned into Apron expression
 	 * @param inverse   Do we need the inverse expression (useful when you want to
