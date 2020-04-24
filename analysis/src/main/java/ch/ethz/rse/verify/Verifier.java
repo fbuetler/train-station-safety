@@ -83,6 +83,7 @@ public class Verifier extends AVerifier {
 	public boolean checkTrackNonNegative() {
 		logger.debug("Analyzing checkTrackNonNegative for {}", c.getName());
 
+		boolean nonNegative = true;
 		for (SootMethod method : this.c.getMethods()) {
 			if (method.getName().contains("<init>")) {
 				// skip constructor of the class
@@ -91,21 +92,23 @@ public class Verifier extends AVerifier {
 
 			NumericalAnalysis na = numericalAnalysis.get(method);
 
-			boolean nonNegative = true;
-			for (CallToArrive callToArrive : na.arrivals) {
-				logger.debug("A callToArrive: {}", callToArrive);
-				Abstract1 state = callToArrive.state.get();
+			for (Map.Entry elem: na.arrivalsMap.entrySet()) {
+				CallToArrive callToArrive = (CallToArrive) elem.getValue();
+				Abstract1 state = callToArrive.getFoldedState().get();
 				if (state == null) {
 					logger.error("CallToArrive state is empty: {}", callToArrive);
 				}
-
-				VirtualInvokeExpr invokeExpr = callToArrive.invokeExpr;
+				
+				VirtualInvokeExpr invokeExpr = (VirtualInvokeExpr) elem.getKey();
 				Value arg = invokeExpr.getArg(0);
 				nonNegative &= checkConstraint(0, Integer.MAX_VALUE, arg, state, na.man);
+				
+				if(!nonNegative) { // Stop early
+					return false;
+				}				
 			}
-			return nonNegative;
 		}
-		return false;
+		return true;
 	}
 
 	@Override
@@ -120,15 +123,17 @@ public class Verifier extends AVerifier {
 
 			NumericalAnalysis na = numericalAnalysis.get(method);
 			boolean inRange = true;
-			for (CallToArrive callToArrive : na.arrivals) {
-				Abstract1 state = callToArrive.state.get();
+			
+			for (Map.Entry elem: na.arrivalsMap.entrySet()) {
+				CallToArrive callToArrive = (CallToArrive) elem.getValue();
+				Abstract1 state = callToArrive.getFoldedState().get();
 				if (state == null) {
 					logger.error("CallToArrive state is empty: {}", callToArrive);
 				}
-
-				VirtualInvokeExpr invokeExpr = callToArrive.invokeExpr;
-				Value arg = callToArrive.invokeExpr.getArg(0);
-
+				
+				VirtualInvokeExpr invokeExpr = (VirtualInvokeExpr) elem.getKey();
+				Value arg = invokeExpr.getArg(0);
+				
 				Value base = invokeExpr.getBase();
 				Collection<Node> nodes = pointsTo.getNodes((JimpleLocal) base);
 				if (nodes.size() > 1) {
@@ -143,10 +148,13 @@ public class Verifier extends AVerifier {
 				}
 
 				inRange &= checkConstraint(Integer.MIN_VALUE, nTracks - 1, arg, state, na.man);
+				
+				if(!inRange) { // Stop early
+					return false;
+				}
 			}
-			return inRange;
 		}
-		return false;
+		return true;
 	}
 
 	/*
@@ -189,6 +197,8 @@ public class Verifier extends AVerifier {
 
 			NumericalAnalysis na = numericalAnalysis.get(method);
 			// TODO (flbuetle) rm duplicate calls in arrivals: See comment in numericalAnalysis 
+			// (lmeinen) Removing duplicate calls to arrivals is the last thing you'd want to do,
+			// seeing as they are a violation of the property we're checking
 			logger.debug("all arrivals: {}", na.arrivals);
 			boolean noCrash = true;
 			int arrivalsSize = na.arrivals.size();
@@ -231,12 +241,14 @@ public class Verifier extends AVerifier {
 					} else {
 						logger.error("unsupported type in checkNoCrash: {}", outerArg);
 					}
-
+					
+					if(!noCrash) { // Stop early
+						return false;
+					}
 				}
 			}
-			return noCrash;
 		}
-		return false;
+		return true;
 	}
 
 }

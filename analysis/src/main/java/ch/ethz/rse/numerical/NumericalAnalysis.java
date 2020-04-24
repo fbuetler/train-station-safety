@@ -81,7 +81,13 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * Previously seen abstract state for each loop head
 	 */
 	private HashMap<Unit, NumericalStateWrapper> loopHeadState = new HashMap<Unit, NumericalStateWrapper>();
+	
 	public List<CallToArrive> arrivals = new LinkedList<CallToArrive>();
+	/**
+	 * the CallToArrive objects in this map store all states which went through Unit
+	 * --> Allows for more efficient iteration of calls to arrive()
+	 */
+	public HashMap<Unit, CallToArrive> arrivalsMap = new HashMap<Unit, CallToArrive>();
 
 	/**
 	 * Numerical abstract domain to use for analysis: Convex polyhedra
@@ -290,6 +296,11 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		CallToArrive arrival = new CallToArrive(this.method, (JVirtualInvokeExpr) jInvStmt.getInvokeExpr(), this,
 				fallOutWrapper);
 		arrivals.add(arrival);
+		if(arrivalsMap.containsKey(jInvStmt)) {
+			arrivalsMap.get(jInvStmt).addState(fallOutWrapper);
+		} else {
+			arrivalsMap.put(jInvStmt, arrival);
+		}
 	}
 
 	/**
