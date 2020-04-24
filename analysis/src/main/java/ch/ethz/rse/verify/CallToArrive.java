@@ -35,6 +35,10 @@ public class CallToArrive {
 		return states;
 	}
 	
+	public NumericalStateWrapper getFoldedState() {
+		return foldedState;
+	}
+	
 	public void addState(NumericalStateWrapper state) {
 		states.add(state);
 		foldedState = foldedState.join(state);

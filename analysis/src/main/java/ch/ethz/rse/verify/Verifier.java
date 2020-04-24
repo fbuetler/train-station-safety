@@ -92,14 +92,14 @@ public class Verifier extends AVerifier {
 			NumericalAnalysis na = numericalAnalysis.get(method);
 
 			boolean nonNegative = true;
-			for (CallToArrive callToArrive : na.arrivals) {
-				logger.debug("A callToArrive: {}", callToArrive);
-				Abstract1 state = callToArrive.state.get();
+			for (Map.Entry elem: na.arrivalsMap.entrySet()) {
+				CallToArrive callToArrive = (CallToArrive) elem.getValue();
+				Abstract1 state = callToArrive.getFoldedState().get();
 				if (state == null) {
 					logger.error("CallToArrive state is empty: {}", callToArrive);
 				}
-
-				VirtualInvokeExpr invokeExpr = callToArrive.invokeExpr;
+				
+				VirtualInvokeExpr invokeExpr = (VirtualInvokeExpr) elem.getKey();
 				Value arg = invokeExpr.getArg(0);
 				nonNegative &= checkConstraint(0, Integer.MAX_VALUE, arg, state, na.man);
 			}
@@ -120,15 +120,17 @@ public class Verifier extends AVerifier {
 
 			NumericalAnalysis na = numericalAnalysis.get(method);
 			boolean inRange = true;
-			for (CallToArrive callToArrive : na.arrivals) {
-				Abstract1 state = callToArrive.state.get();
+			
+			for (Map.Entry elem: na.arrivalsMap.entrySet()) {
+				CallToArrive callToArrive = (CallToArrive) elem.getValue();
+				Abstract1 state = callToArrive.getFoldedState().get();
 				if (state == null) {
 					logger.error("CallToArrive state is empty: {}", callToArrive);
 				}
-
-				VirtualInvokeExpr invokeExpr = callToArrive.invokeExpr;
-				Value arg = callToArrive.invokeExpr.getArg(0);
-
+				
+				VirtualInvokeExpr invokeExpr = (VirtualInvokeExpr) elem.getKey();
+				Value arg = invokeExpr.getArg(0);
+				
 				Value base = invokeExpr.getBase();
 				Collection<Node> nodes = pointsTo.getNodes((JimpleLocal) base);
 				if (nodes.size() > 1) {
@@ -189,6 +191,8 @@ public class Verifier extends AVerifier {
 
 			NumericalAnalysis na = numericalAnalysis.get(method);
 			// TODO (flbuetle) rm duplicate calls in arrivals: See comment in numericalAnalysis 
+			// (lmeinen) Removing duplicate calls to arrivals is the last thing you'd want to do,
+			// seeing as they are a violation of the property we're checking
 			logger.debug("all arrivals: {}", na.arrivals);
 			boolean noCrash = true;
 			int arrivalsSize = na.arrivals.size();
