@@ -108,7 +108,7 @@ public class NumericalStateWrapper {
 			throw new RuntimeException(e);
 		}
 	}
-
+	
 	public NumericalStateWrapper widen(NumericalStateWrapper newState) {
 		try {
 			// apron requires explicit joining before widening
