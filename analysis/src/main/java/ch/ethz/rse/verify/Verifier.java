@@ -241,12 +241,14 @@ public class Verifier extends AVerifier {
 					} else {
 						logger.error("unsupported type in checkNoCrash: {}", outerArg);
 					}
-
+					
+					if(!noCrash) { // Stop early
+						return false;
+					}
 				}
 			}
-			return noCrash;
 		}
-		return false;
+		return true;
 	}
 
 }
