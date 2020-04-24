@@ -83,6 +83,7 @@ public class Verifier extends AVerifier {
 	public boolean checkTrackNonNegative() {
 		logger.debug("Analyzing checkTrackNonNegative for {}", c.getName());
 
+		boolean nonNegative = true;
 		for (SootMethod method : this.c.getMethods()) {
 			if (method.getName().contains("<init>")) {
 				// skip constructor of the class
@@ -91,7 +92,6 @@ public class Verifier extends AVerifier {
 
 			NumericalAnalysis na = numericalAnalysis.get(method);
 
-			boolean nonNegative = true;
 			for (Map.Entry elem: na.arrivalsMap.entrySet()) {
 				CallToArrive callToArrive = (CallToArrive) elem.getValue();
 				Abstract1 state = callToArrive.getFoldedState().get();
@@ -102,10 +102,13 @@ public class Verifier extends AVerifier {
 				VirtualInvokeExpr invokeExpr = (VirtualInvokeExpr) elem.getKey();
 				Value arg = invokeExpr.getArg(0);
 				nonNegative &= checkConstraint(0, Integer.MAX_VALUE, arg, state, na.man);
+				
+				if(!nonNegative) { // Stop early
+					return false;
+				}				
 			}
-			return nonNegative;
 		}
-		return false;
+		return true;
 	}
 
 	@Override
@@ -145,10 +148,13 @@ public class Verifier extends AVerifier {
 				}
 
 				inRange &= checkConstraint(Integer.MIN_VALUE, nTracks - 1, arg, state, na.man);
+				
+				if(!inRange) { // Stop early
+					return false;
+				}
 			}
-			return inRange;
 		}
-		return false;
+		return true;
 	}
 
 	/*
