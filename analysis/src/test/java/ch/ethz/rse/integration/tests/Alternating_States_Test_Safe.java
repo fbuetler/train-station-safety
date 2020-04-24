@@ -11,14 +11,14 @@ public class Alternating_States_Test_Safe {
 	public static void m1(int j) {
 		TrainStation s = new TrainStation(10);
 		int toggle = 0;
-		int k = 0;
+		int k = 1;
 		for (int i = 0; i < 2; i++) {
-			if (toggle == 0) {
+			if (toggle == 1) {
 				k = 3;
-				toggle = 1;
+				toggle = 2;
 			} else {
 				k = 7;
-				toggle = 0;
+				toggle = 1;
 			}
 			s.arrive(k);
 		}

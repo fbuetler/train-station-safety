@@ -10,15 +10,15 @@ import ch.ethz.rse.TrainStation;
 public class Alternating_States_Test_Unsafe {
 	public static void m1(int j) {
 		TrainStation s = new TrainStation(10);
-		int toggle = 0;
-		int k = 0;
+		int toggle = 1;
+		int k = 1;
 		for (int i = 0; i < 5; i++) {
-			if (toggle == 0) {
+			if (toggle == 1) {
 				k = -1;
-				toggle = 1;
-			} else if (toggle == 1) {
+				toggle = 2;
+			} else if (toggle == 2) {
 				k = 11;
-				toggle = 0;
+				toggle = 1;
 			} else {
 				k = 5;
 			}
