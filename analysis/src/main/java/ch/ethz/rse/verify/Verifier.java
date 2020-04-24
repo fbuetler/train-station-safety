@@ -99,7 +99,7 @@ public class Verifier extends AVerifier {
 					logger.error("CallToArrive state is empty: {}", callToArrive);
 				}
 				
-				VirtualInvokeExpr invokeExpr = (VirtualInvokeExpr) ((JInvokeStmt)elem.getKey()).getInvokeExpr();
+				VirtualInvokeExpr invokeExpr = (JVirtualInvokeExpr) ((JInvokeStmt)elem.getKey()).getInvokeExpr();
 				Value arg = invokeExpr.getArg(0);
 				nonNegative &= checkConstraint(0, Integer.MAX_VALUE, arg, state, na.man);
 				
@@ -131,7 +131,7 @@ public class Verifier extends AVerifier {
 					logger.error("CallToArrive state is empty: {}", callToArrive);
 				}
 				
-				VirtualInvokeExpr invokeExpr = (VirtualInvokeExpr) ((JInvokeStmt)elem.getKey()).getInvokeExpr();
+				VirtualInvokeExpr invokeExpr = (JVirtualInvokeExpr) ((JInvokeStmt)elem.getKey()).getInvokeExpr();
 				Value arg = invokeExpr.getArg(0);
 				
 				Value base = invokeExpr.getBase();
