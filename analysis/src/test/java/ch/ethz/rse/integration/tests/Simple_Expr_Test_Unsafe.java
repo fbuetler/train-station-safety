@@ -3,9 +3,9 @@ package ch.ethz.rse.integration.tests;
 import ch.ethz.rse.TrainStation;
 
 // expected results:
-// TRACK_NON_NEGATIVE SAFE
-// TRACK_IN_RANGE SAFE
-// NO_CRASH SAFE
+// TRACK_NON_NEGATIVE UNSAFE
+// TRACK_IN_RANGE UNSAFE
+// NO_CRASH UNSAFE
 
 public class Simple_Expr_Test_Unsafe {
 	public void m2(int j) {
