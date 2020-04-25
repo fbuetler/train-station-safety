@@ -145,9 +145,9 @@ public class Verifier extends AVerifier {
 				for (Node n : nodes) {
 					TrainStationInitializer tsi = pointsTo.getTSInitializer(n);
 					nTracks = tsi.nTracks;
+					inRange &= checkConstraint(Integer.MIN_VALUE, nTracks - 1, arg, state, na.man);
 				}
 
-				inRange &= checkConstraint(Integer.MIN_VALUE, nTracks - 1, arg, state, na.man);
 				
 				if(!inRange) { // Stop early
 					return false;
