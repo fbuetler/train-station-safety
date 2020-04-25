@@ -222,6 +222,8 @@ public class Verifier extends AVerifier {
 					if (outerArg instanceof JimpleLocal) {
 						if (innerArg instanceof JimpleLocal) {
 							// TODO (flbuetle) if their intervals overlap: return false
+							return false; // Imprecise instead of unsound
+							
 						} else if (innerArg instanceof IntConstant) {
 							int innerVal = ((IntConstant) innerArg).value;
 							noCrash &= checkConstraint(innerVal, innerVal, outerArg, outerState, na.man);
