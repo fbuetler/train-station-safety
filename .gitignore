@@ -6,12 +6,13 @@
 
 /analysis/hs_err_*.log
 
-# eclipse and vscode
+# eclipse, intellij and vscode
 /**/.classpath
 /**/.project
 /**/.settings
 /**/__pycache__
 /**/.vscode
+/**/.idea
 
 # temporary files
 /**/*odp#
