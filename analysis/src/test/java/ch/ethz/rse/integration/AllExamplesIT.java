@@ -88,7 +88,7 @@ public class AllExamplesIT {
 
 		// check result
 		this.compare(example.toString(), example.expected, actual);
-		Assertions.assertEquals(example.expected, actual);
+		Assertions.assertEquals(example.expected, actual, tc.getName());
 	}
 
 	// WRITING RESULTS
