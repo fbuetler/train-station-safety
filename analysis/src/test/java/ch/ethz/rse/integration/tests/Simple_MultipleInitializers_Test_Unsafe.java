@@ -4,7 +4,7 @@ import ch.ethz.rse.TrainStation;
 
 // expected results:
 // TRACK_NON_NEGATIVE SAFE
-// TRACK_IN_RANGE SAFE
+// TRACK_IN_RANGE UNSAFE
 // NO_CRASH SAFE
 
 public class Simple_MultipleInitializers_Test_Unsafe {
