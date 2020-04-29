@@ -177,9 +177,8 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		logger.debug("in merge: " + succNode);
 
 		logger.debug("join: {} with {}", in1, in2);
-//		out = in1.join(in2);
 		NumericalStateWrapper out_new = in1.join(in2);
-		out_new.copyInto(out);
+		out.set(out_new.get());
 	}
 
 	@Override
