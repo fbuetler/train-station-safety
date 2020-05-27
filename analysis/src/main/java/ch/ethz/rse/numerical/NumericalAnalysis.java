@@ -104,7 +104,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * at the cost of runtime (lmeinen) Should we reset the number of times a head
 	 * is met when the branch falls through 100%, e.g. for nested loops?
 	 */
-	private static final int WIDENING_THRESHOLD = 6;
+	private static final int WIDENING_THRESHOLD = 11;
 
 	/**
 	 * 

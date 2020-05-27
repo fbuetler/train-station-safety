@@ -254,6 +254,12 @@ public class ApronTest {
 		System.out.println("empty: " + xempty);
 		System.out.println("a0:  " + xa0);
 		System.out.println("a0:  " + xa0.toString(man));
+		
+		Interval inter = new Interval(1,1);
+		System.out.println("Interval: "+inter);
+		System.out.println("Variable: "+xa0.getBound(man, "a"));
+		System.out.println("COMPARISON: "+xa0.satisfy(man, "a", inter));
+
 		assert !xfull.isBottom(man);
 		assert xfull.isTop(man);
 		assert xempty.isBottom(man);
@@ -422,6 +428,14 @@ public class ApronTest {
 
 	@Test
 	public void variousTests() throws ApronException, CloneNotSupportedException {
+
+		Interval int1 = new Interval(1,2);
+		Interval int2 = new Interval(3,3);
+		System.out.println("COMPARISON: "+int1.cmp(int2));
+		int2 = new Interval(0,0);
+		System.out.println("COMPARISON: "+int1.cmp(int2));
+
+
 		/* level 0 */
 
 		System.out.println("Dimperm test");

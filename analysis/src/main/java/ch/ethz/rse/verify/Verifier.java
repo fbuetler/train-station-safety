@@ -158,9 +158,9 @@ public class Verifier extends AVerifier {
 	}
 
 	/*
-	 * checkConstraint checks if the given arg with the allowed interval
-	 * [lowerBound, upperBound] is satisfied in the given state
-	 * 
+	 * checkConstraint checks if the given arg is FULLY within the allowed interval
+	 * [lowerBound, upperBound]
+	 * NOTE: Overlapping intervals aren't enough to return true here
 	 */
 	private boolean checkConstraint(int lowerBound, int upperBound, Value arg, Abstract1 state, Manager man) {
 		logger.debug("state: {}", state);
@@ -220,20 +220,38 @@ public class Verifier extends AVerifier {
 					logger.debug("outer arg: {}", outerArg);
 
 					if (outerArg instanceof JimpleLocal) {
+						String outerVarName = ((JimpleLocal) outerArg).getName();
 						if (innerArg instanceof JimpleLocal) {
-							// TODO (flbuetle) if their intervals overlap: return false
-							return false; // Imprecise instead of unsound
-							
+							// If their intervals overlap: return false
+							// TODO: (lmeinen) Use polyhedra domain instead, as more precise
+							String innerVarName = ((JimpleLocal) innerArg).getName();
+							Interval outerBound, innerBound;
+							try{
+								outerBound = outerState.getBound(na.man, outerVarName);
+								innerBound = innerState.getBound(na.man, innerVarName);
+							}catch(ApronException e){
+								throw new RuntimeException(e);
+							}
+							logger.debug("Inner bound: "+innerBound);
+							System.out.println("Outer bound: "+outerBound);
+							int comparedLowerInner = innerBound.cmp(outerBound.inf());
+							int comparedUpperInner = innerBound.cmp(outerBound.sup());
+							int comparedLowerOuter = outerBound.cmp(innerBound.inf());
+							int comparedUpperOuter = outerBound.cmp(innerBound.sup());
+							logger.debug("Comparision results: "+comparedLowerInner+" "+comparedUpperInner+" "+comparedLowerOuter+" "+comparedUpperOuter);
+							// Either the inner interval is bigger than the outer, or vica-versa
+							noCrash &= (comparedLowerInner == 2 && comparedUpperInner == 2) || (comparedLowerOuter == 2 && comparedUpperOuter == 2);
 						} else if (innerArg instanceof IntConstant) {
 							int innerVal = ((IntConstant) innerArg).value;
-							noCrash &= checkConstraint(innerVal, innerVal, outerArg, outerState, na.man);
+							noCrash &= checkVarCnst(innerVal, outerVarName, outerState, na.env, na.man);
 						} else {
 							logger.error("unsupported type in checkNoCrash: {}", innerArg);
 						}
 					} else if (outerArg instanceof IntConstant) {
 						int outerVal = ((IntConstant) outerArg).value;
 						if (innerArg instanceof JimpleLocal) {
-							noCrash &= checkConstraint(outerVal, outerVal, innerArg, innerState, na.man);
+							String innerVarName = ((JimpleLocal)innerArg).getName();
+							noCrash &= checkVarCnst(outerVal, innerVarName, innerState, na.env, na.man);
 						} else if (innerArg instanceof IntConstant) {
 							int innerVal = ((IntConstant) innerArg).value;
 							noCrash &= outerVal != innerVal;
@@ -249,6 +267,38 @@ public class Verifier extends AVerifier {
 					}
 				}
 			}
+		}
+		return true;
+	}
+
+	/**
+	 * Checks if the given variable might equal the given constant
+	 * 
+	 * @param cnst		Constant value to check
+	 * @param varName	Variable specified in state to check
+	 * @param state		State specifying possible variable values
+	 * @param env
+	 * @param man
+	 * @return			True if var definitely doesn't equal const, false otherwise
+	 */
+	public boolean checkVarCnst(int cnst, String varName, Abstract1 state, Environment env, Manager man){
+		Interval sclr = new Interval(cnst, cnst);
+		Texpr1VarNode variable = new Texpr1VarNode(varName);
+		Texpr1CstNode constant = new Texpr1CstNode(sclr);
+		Texpr1Node lArg, rArg;
+		if(cnst > 0){
+			lArg = variable;
+			rArg = constant;
+		} else {
+			lArg = constant;
+			rArg = variable;
+		}
+		Texpr1BinNode expr = new Texpr1BinNode(Texpr1BinNode.OP_SUB, lArg, rArg);
+		Tcons1 constraint = new Tcons1(env, Tcons1.DISEQ, expr);
+		try {
+			return state.satisfy(man, constraint);
+		} catch(ApronException e){
+			logger.error("unsupported operation");
 		}
 		return true;
 	}
