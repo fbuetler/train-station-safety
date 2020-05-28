@@ -199,6 +199,8 @@ public class Verifier extends AVerifier {
 			// TODO (flbuetle) rm duplicate calls in arrivals: See comment in numericalAnalysis 
 			// (lmeinen) Removing duplicate calls to arrivals is the last thing you'd want to do,
 			// seeing as they are a violation of the property we're checking
+			// TODO: (lmeinen) Change method such that we pass set of constraints describing set of
+			//				   taken tracks forward --> Linear instead of quadratic, explains why initially -1
 			logger.debug("all arrivals: {}", na.arrivals);
 			boolean noCrash = true;
 			int arrivalsSize = na.arrivals.size();

@@ -12,6 +12,7 @@ import com.google.common.collect.Iterables;
 import apron.Environment;
 import ch.ethz.rse.pointer.PointsToInitializer;
 import ch.ethz.rse.pointer.TrainStationInitializer;
+import soot.IntType;
 import soot.IntegerType;
 import soot.Local;
 import soot.SootMethod;
@@ -59,6 +60,10 @@ public class EnvironmentGenerator {
 		for (Local var : method.getActiveBody().getParameterLocals()) {
 			addToInts(var);
 		}
+
+		// add initial track constraint
+		logger.debug("adding track constraint");
+		this.ints.add("track");
 
 		String ints_arr[] = Iterables.toArray(this.ints, String.class);
 		String reals[] = {}; // we are not analyzing real numbers

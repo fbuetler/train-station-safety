@@ -167,7 +167,11 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	@Override
 	protected NumericalStateWrapper entryInitialFlow() {
 		// state of entry points into function
-		return NumericalStateWrapper.top(man, env);
+		NumericalStateWrapper entry = NumericalStateWrapper.top(man, env);
+		// Set track to -1
+		Texpr1Node expr = new Texpr1CstNode(new MpqScalar(-1));
+		entry.assign("track", new Texpr1Intern(env, expr));
+		return entry;
 	}
 
 	@Override
@@ -300,6 +304,11 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		} else {
 			arrivalsMap.put(jInvStmt, arrival);
 		}
+		// Add to track constraint
+		Value arg = ((JVirtualInvokeExpr) jInvStmt.getInvokeExpr()).getArg(0);
+		Texpr1Intern expr = new Texpr1Intern(atom(arg));
+		NumericalStateWrapper other = fallOutWrapper.assignCopy("track", expr);
+		fallOutWrapper.join(other).copyInto(fallOutWrapper);;
 	}
 
 	/**
@@ -398,8 +407,8 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		Texpr1Node expr;
 		if (right instanceof BinopExpr) {
 			BinopExpr rExpr = (BinopExpr) right;
-			Texpr1Node lArg = Texpr1Node.fromLinexpr1(atomic(rExpr.getOp1()));
-			Texpr1Node rArg = Texpr1Node.fromLinexpr1(atomic(rExpr.getOp2()));
+			Texpr1Node lArg = Texpr1Node.fromLinexpr1(atom(rExpr.getOp1()));
+			Texpr1Node rArg = Texpr1Node.fromLinexpr1(atom(rExpr.getOp2()));
 
 			if (rExpr instanceof AddExpr) {
 				// RHS is an addition
@@ -413,7 +422,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 			}
 		} else {
 			// RHS is a variable, a constant or a parameter
-			expr = Texpr1Node.fromLinexpr1(atomic(right));
+			expr = Texpr1Node.fromLinexpr1(atom(right));
 		}
 		Texpr1Intern value = new Texpr1Intern(env, expr);
 		outWrapper.assign(varName, value);
@@ -427,7 +436,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * @return Linexpr1 representing val
 	 * @throws ApronException
 	 */
-	private Linexpr1 atomic(Value value) {
+	private Linexpr1 atom(Value value) {
 		Linexpr1 expr = new Linexpr1(env);
 		MpqScalar sclr = new MpqScalar();
 
