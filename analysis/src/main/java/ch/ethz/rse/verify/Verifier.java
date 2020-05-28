@@ -188,6 +188,7 @@ public class Verifier extends AVerifier {
 	@Override
 	public boolean checkNoCrash() {
 		logger.debug("Analyzing checkNoCrash for {}", c.getName());
+		boolean noCrash = true;
 
 		for (SootMethod method : this.c.getMethods()) {
 			if (method.getName().contains("<init>")) {
@@ -202,75 +203,43 @@ public class Verifier extends AVerifier {
 			// TODO: (lmeinen) Change method such that we pass set of constraints describing set of
 			//				   taken tracks forward --> Linear instead of quadratic, explains why initially -1
 			logger.debug("all arrivals: {}", na.arrivals);
-			boolean noCrash = true;
-			int arrivalsSize = na.arrivals.size();
-			for (int i = 0; i < arrivalsSize; i++) {
-				for (int j = i + 1; j < arrivalsSize; j++) { // ensures no two calls are compared twice
-					CallToArrive outerCtA = na.arrivals.get(i);
-					CallToArrive innerCtA = na.arrivals.get(j);
+			for (Map.Entry elem: na.arrivalsMap.entrySet()) {
+				CallToArrive callToArrive = (CallToArrive) elem.getValue();
+				LinkedList<NumericalStateWrapper> states = callToArrive.getStates();
+				if (states == null) {
+					logger.error("CallToArrive state is empty: {}", callToArrive);
+				}
+				
+				VirtualInvokeExpr invokeExpr = (JVirtualInvokeExpr) ((JInvokeStmt)elem.getKey()).getInvokeExpr();
+				Value arg = invokeExpr.getArg(0);
 
-					Abstract1 outerState = outerCtA.state.get();
-					Abstract1 innerState = innerCtA.state.get();
+				Texpr1Node expr;
+				if(arg instanceof JimpleLocal){
+					String varName = ((JimpleLocal) arg).getName();
+					expr = new Texpr1BinNode(Texpr1BinNode.OP_SUB, new Texpr1VarNode("track"), new Texpr1VarNode(varName));
+				} else if(arg instanceof IntConstant){
+					int val = ((IntConstant) arg).value;
+					expr = new Texpr1BinNode(Texpr1BinNode.OP_SUB, new Texpr1VarNode("track"), new Texpr1CstNode(new MpqScalar(val)));
+				} else {
+					logger.error("Unhandled arg type in noCrash: {}", arg);
+					return false;
+				}
 
-					Value outerArg = outerCtA.invokeExpr.getArg(0);
-					Value innerArg = innerCtA.invokeExpr.getArg(0);
-
-					logger.debug("innter state: {}", innerState.toString());
-					logger.debug("inner arg: {}", innerArg);
-
-					logger.debug("outer state: {}", outerState.toString());
-					logger.debug("outer arg: {}", outerArg);
-
-					if (outerArg instanceof JimpleLocal) {
-						String outerVarName = ((JimpleLocal) outerArg).getName();
-						if (innerArg instanceof JimpleLocal) {
-							// If their intervals overlap: return false
-							// TODO: (lmeinen) Use polyhedra domain instead, as more precise
-							String innerVarName = ((JimpleLocal) innerArg).getName();
-							Interval outerBound, innerBound;
-							try{
-								outerBound = outerState.getBound(na.man, outerVarName);
-								innerBound = innerState.getBound(na.man, innerVarName);
-							}catch(ApronException e){
-								throw new RuntimeException(e);
-							}
-							logger.debug("Inner bound: "+innerBound);
-							System.out.println("Outer bound: "+outerBound);
-							int comparedLowerInner = innerBound.cmp(outerBound.inf());
-							int comparedUpperInner = innerBound.cmp(outerBound.sup());
-							int comparedLowerOuter = outerBound.cmp(innerBound.inf());
-							int comparedUpperOuter = outerBound.cmp(innerBound.sup());
-							logger.debug("Comparision results: "+comparedLowerInner+" "+comparedUpperInner+" "+comparedLowerOuter+" "+comparedUpperOuter);
-							// Either the inner interval is bigger than the outer, or vica-versa
-							noCrash &= (comparedLowerInner == 2 && comparedUpperInner == 2) || (comparedLowerOuter == 2 && comparedUpperOuter == 2);
-						} else if (innerArg instanceof IntConstant) {
-							int innerVal = ((IntConstant) innerArg).value;
-							noCrash &= checkVarCnst(innerVal, outerVarName, outerState, na.env, na.man);
-						} else {
-							logger.error("unsupported type in checkNoCrash: {}", innerArg);
-						}
-					} else if (outerArg instanceof IntConstant) {
-						int outerVal = ((IntConstant) outerArg).value;
-						if (innerArg instanceof JimpleLocal) {
-							String innerVarName = ((JimpleLocal)innerArg).getName();
-							noCrash &= checkVarCnst(outerVal, innerVarName, innerState, na.env, na.man);
-						} else if (innerArg instanceof IntConstant) {
-							int innerVal = ((IntConstant) innerArg).value;
-							noCrash &= outerVal != innerVal;
-						} else {
-							logger.error("unsupported type in checkNoCrash: {}", innerArg);
-						}
-					} else {
-						logger.error("unsupported type in checkNoCrash: {}", outerArg);
+				for(NumericalStateWrapper wrapper: states){
+					Abstract1 state = wrapper.get();
+					try{
+						noCrash &= state.satisfy(na.man, new Tcons1(na.env, Tcons1.DISEQ, expr));
+					}catch(ApronException e){
+						logger.error("noCrash threw ApronException");
 					}
-					
-					if(!noCrash) { // Stop early
-						return false;
+
+					if(!noCrash){
+						return noCrash;
 					}
 				}
 			}
 		}
-		return true;
+		return noCrash;
 	}
 
 	/**
