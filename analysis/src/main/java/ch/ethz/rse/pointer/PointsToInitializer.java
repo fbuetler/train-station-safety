@@ -13,12 +13,9 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import ch.ethz.rse.utils.Constants;
-import soot.Local;
-import soot.SootClass;
-import soot.SootMethod;
-import soot.Unit;
-import soot.Value;
+import soot.*;
 import soot.jimple.IntConstant;
+import soot.jimple.internal.JAssignStmt;
 import soot.jimple.internal.JInvokeStmt;
 import soot.jimple.internal.JSpecialInvokeExpr;
 import soot.jimple.internal.JimpleLocal;
@@ -102,9 +99,6 @@ public class PointsToInitializer {
 						}
 					}
 				}
-				
-				// TODO (flbuetle) Track of the form "TrainStation t = s;", where s is of type TrainStation, in pointsTo
-				
 			}
 		}
 	}
