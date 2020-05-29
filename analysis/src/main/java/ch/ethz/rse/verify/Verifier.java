@@ -203,14 +203,8 @@ public class Verifier extends AVerifier {
 			// TODO: (lmeinen) Change method such that we pass set of constraints describing set of
 			//				   taken tracks forward --> Linear instead of quadratic, explains why initially -1
 			logger.debug("all arrivals: {}", na.arrivals);
-			for (Map.Entry elem: na.arrivalsMap.entrySet()) {
-				CallToArrive callToArrive = (CallToArrive) elem.getValue();
-				LinkedList<NumericalStateWrapper> states = callToArrive.getStates();
-				if (states == null) {
-					logger.error("CallToArrive state is empty: {}", callToArrive);
-				}
-				
-				VirtualInvokeExpr invokeExpr = (JVirtualInvokeExpr) ((JInvokeStmt)elem.getKey()).getInvokeExpr();
+			for (CallToArrive callToArrive: na.arrivals) {
+				VirtualInvokeExpr invokeExpr = callToArrive.invokeExpr;
 				Value arg = invokeExpr.getArg(0);
 
 				Texpr1Node expr;
@@ -225,18 +219,20 @@ public class Verifier extends AVerifier {
 					return false;
 				}
 
-				for(NumericalStateWrapper wrapper: states){
-					Abstract1 state = wrapper.get();
-					try{
-						noCrash &= state.satisfy(na.man, new Tcons1(na.env, Tcons1.DISEQ, expr));
-					}catch(ApronException e){
-						logger.error("noCrash threw ApronException");
-					}
-
-					if(!noCrash){
-						return noCrash;
-					}
+				NumericalStateWrapper wrapper = callToArrive.state;
+				Abstract1 state = wrapper.get();
+				try{
+					Tcons1 constr = new Tcons1(na.env, Tcons1.DISEQ, expr);
+					noCrash &= state.satisfy(na.man, constr);
+					logger.debug("Checking arrival: "+arg+" in "+state);
+					logger.debug(constr+" in "+state+" => "+noCrash);
+				}catch(ApronException e){
+					logger.error("noCrash threw ApronException");
 				}
+				if(!noCrash){
+					return noCrash;
+				}
+				
 			}
 		}
 		return noCrash;

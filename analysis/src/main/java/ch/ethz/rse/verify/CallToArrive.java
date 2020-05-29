@@ -2,6 +2,9 @@ package ch.ethz.rse.verify;
 
 import java.util.LinkedList;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ch.ethz.rse.numerical.NumericalAnalysis;
 import ch.ethz.rse.numerical.NumericalStateWrapper;
 import soot.SootMethod;
@@ -11,6 +14,8 @@ import soot.jimple.internal.JVirtualInvokeExpr;
  * Convenience wrapper that stores information about a specific call to arrive
  */
 public class CallToArrive {
+
+	private static final Logger logger = LoggerFactory.getLogger(NumericalStateWrapper.class);
 
 	public final SootMethod method;
 	public final JVirtualInvokeExpr invokeExpr;
@@ -29,6 +34,7 @@ public class CallToArrive {
 		this.state = state;
 		this.foldedState = state;
 		this.states.add(state);
+		logger.debug("Added CtA "+invokeExpr+" with state "+state);
 	}
 	
 	public LinkedList<NumericalStateWrapper> getStates(){

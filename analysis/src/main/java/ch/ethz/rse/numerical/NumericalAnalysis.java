@@ -297,7 +297,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	private void handleInvoke(JInvokeStmt jInvStmt, NumericalStateWrapper fallOutWrapper) throws ApronException {
 		// TODO (flbuetle) currently we add up to WIDENING_THRESHOLD+1 times a CallToArrive if arrive is called in a loop body
 		CallToArrive arrival = new CallToArrive(this.method, (JVirtualInvokeExpr) jInvStmt.getInvokeExpr(), this,
-				fallOutWrapper);
+				fallOutWrapper.copy());
 		arrivals.add(arrival);
 		if(arrivalsMap.containsKey(jInvStmt)) {
 			arrivalsMap.get(jInvStmt).addState(fallOutWrapper);
@@ -308,7 +308,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		Value arg = ((JVirtualInvokeExpr) jInvStmt.getInvokeExpr()).getArg(0);
 		Texpr1Intern expr = new Texpr1Intern(atom(arg));
 		NumericalStateWrapper other = fallOutWrapper.assignCopy("track", expr);
-		fallOutWrapper.join(other).copyInto(fallOutWrapper);;
+		fallOutWrapper.join(other).copyInto(fallOutWrapper);
 	}
 
 	/**
