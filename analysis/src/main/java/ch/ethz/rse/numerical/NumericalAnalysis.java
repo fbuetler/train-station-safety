@@ -46,21 +46,9 @@ import soot.jimple.MulExpr;
 import soot.jimple.ParameterRef;
 import soot.jimple.Stmt;
 import soot.jimple.SubExpr;
-import soot.jimple.internal.AbstractBinopExpr;
-import soot.jimple.internal.JArrayRef;
-import soot.jimple.internal.JDivExpr;
-import soot.jimple.internal.JEqExpr;
-import soot.jimple.internal.JGeExpr;
-import soot.jimple.internal.JGtExpr;
-import soot.jimple.internal.JIfStmt;
-import soot.jimple.internal.JInstanceFieldRef;
-import soot.jimple.internal.JInvokeStmt;
-import soot.jimple.internal.JLeExpr;
-import soot.jimple.internal.JLtExpr;
-import soot.jimple.internal.JNeExpr;
-import soot.jimple.internal.JVirtualInvokeExpr;
-import soot.jimple.internal.JimpleLocal;
+import soot.jimple.internal.*;
 import soot.jimple.toolkits.annotation.logic.Loop;
+import soot.jimple.spark.pag.Node;
 import soot.toolkits.graph.LoopNestTree;
 import soot.toolkits.graph.UnitGraph;
 import soot.toolkits.scalar.ForwardBranchedFlowAnalysis;
@@ -296,8 +284,10 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 */
 	private void handleInvoke(JInvokeStmt jInvStmt, NumericalStateWrapper fallOutWrapper) throws ApronException {
 		// TODO (flbuetle) currently we add up to WIDENING_THRESHOLD+1 times a CallToArrive if arrive is called in a loop body
+		Node randomNode = (Node) pointsTo.getNodes((JimpleLocal) ((JVirtualInvokeExpr) jInvStmt.getInvokeExpr()).getBase()).toArray()[0];
+		TrainStationInitializer init = pointsTo.getTSInitializer(randomNode);
 		CallToArrive arrival = new CallToArrive(this.method, (JVirtualInvokeExpr) jInvStmt.getInvokeExpr(), this,
-				fallOutWrapper);
+				fallOutWrapper, init);
 		arrivals.add(arrival);
 		if(arrivalsMap.containsKey(jInvStmt)) {
 			arrivalsMap.get(jInvStmt).addState(fallOutWrapper);

@@ -215,11 +215,19 @@ public class Verifier extends AVerifier {
 					Value outerArg = outerCtA.invokeExpr.getArg(0);
 					Value innerArg = innerCtA.invokeExpr.getArg(0);
 
+					TrainStationInitializer outerInit = outerCtA.init;
+					TrainStationInitializer innerInit = innerCtA.init;
+
 					logger.debug("innter state: {}", innerState.toString());
 					logger.debug("inner arg: {}", innerArg);
 
 					logger.debug("outer state: {}", outerState.toString());
 					logger.debug("outer arg: {}", outerArg);
+
+					// if the two arrive invocations don't share the same initializer, continue as they can not crash
+					if (!outerInit.getUniqueLabel().equals(innerInit.getUniqueLabel())) {
+						continue;
+					}
 
 					if (outerArg instanceof JimpleLocal) {
 						String outerVarName = ((JimpleLocal) outerArg).getName();
