@@ -222,10 +222,11 @@ public class Verifier extends AVerifier {
 				NumericalStateWrapper wrapper = callToArrive.state;
 				Abstract1 state = wrapper.get();
 				try{
-					Tcons1 constr = new Tcons1(na.env, Tcons1.DISEQ, expr);
-					noCrash &= state.satisfy(na.man, constr);
+					Tcons1 constr = new Tcons1(na.env, Tcons1.EQ, expr);
+					boolean mightCrash = !state.meetCopy(na.man, constr).isEqual(na.man, new Abstract1(na.man, na.env, true));
+					noCrash &= !mightCrash;
 					logger.debug("Checking arrival: "+arg+" in "+state);
-					logger.debug(constr+" in "+state+" => "+noCrash);
+					logger.debug(constr+" in "+state+" => "+mightCrash);
 				}catch(ApronException e){
 					logger.error("noCrash threw ApronException");
 				}
