@@ -158,7 +158,9 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		NumericalStateWrapper entry = NumericalStateWrapper.top(man, env);
 		// Set track to -1
 		Texpr1Node expr = new Texpr1CstNode(new MpqScalar(-1));
-		entry.assign("track", new Texpr1Intern(env, expr));
+		for (TrainStationInitializer ts: pointsTo.getTSInitPerMethod(method)){
+			entry.assign("track_"+ts.getUniqueNumber(), new Texpr1Intern(env, expr));
+		}
 		return entry;
 	}
 
