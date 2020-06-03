@@ -115,7 +115,13 @@ public class PointsToInitializer {
 		}
 		return null;
 	}
-	
+
+	public List<TrainStationInitializer> getTSInitPerMethod(SootMethod m) {
+		List<TrainStationInitializer> inits = new LinkedList<>();
+		inits.addAll(this.perMethod.get(m));
+		return inits;
+	}
+
 	public Collection<Node> getNodes(Local base) {
 		return this.pointsTo.getNodes(base);
 	}

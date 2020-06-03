@@ -297,7 +297,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		// Add to track constraint
 		Value arg = ((JVirtualInvokeExpr) jInvStmt.getInvokeExpr()).getArg(0);
 		Texpr1Intern expr = new Texpr1Intern(atom(arg));
-		NumericalStateWrapper other = fallOutWrapper.assignCopy("track", expr);
+		NumericalStateWrapper other = fallOutWrapper.assignCopy("track_"+init.getUniqueNumber(), expr);
 		fallOutWrapper.join(other).copyInto(fallOutWrapper);
 	}
 

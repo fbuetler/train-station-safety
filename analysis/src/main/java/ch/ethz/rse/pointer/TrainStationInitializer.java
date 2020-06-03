@@ -48,7 +48,7 @@ public class TrainStationInitializer {
 	 * 
 	 * @return unique identifier of the initializer
 	 */
-	private int getUniqueNumber() {
+	public int getUniqueNumber() {
 		return this.uniqueNumber;
 	}
 

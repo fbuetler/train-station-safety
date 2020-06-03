@@ -205,15 +205,16 @@ public class Verifier extends AVerifier {
 			logger.debug("all arrivals: {}", na.arrivals);
 			for (CallToArrive callToArrive: na.arrivals) {
 				VirtualInvokeExpr invokeExpr = callToArrive.invokeExpr;
+				String track_var = "track_" + callToArrive.init.getUniqueNumber();
 				Value arg = invokeExpr.getArg(0);
 
 				Texpr1Node expr;
 				if(arg instanceof JimpleLocal){
 					String varName = ((JimpleLocal) arg).getName();
-					expr = new Texpr1BinNode(Texpr1BinNode.OP_SUB, new Texpr1VarNode("track"), new Texpr1VarNode(varName));
+					expr = new Texpr1BinNode(Texpr1BinNode.OP_SUB, new Texpr1VarNode(track_var), new Texpr1VarNode(varName));
 				} else if(arg instanceof IntConstant){
 					int val = ((IntConstant) arg).value;
-					expr = new Texpr1BinNode(Texpr1BinNode.OP_SUB, new Texpr1VarNode("track"), new Texpr1CstNode(new MpqScalar(val)));
+					expr = new Texpr1BinNode(Texpr1BinNode.OP_SUB, new Texpr1VarNode(track_var), new Texpr1CstNode(new MpqScalar(val)));
 				} else {
 					logger.error("Unhandled arg type in noCrash: {}", arg);
 					return false;

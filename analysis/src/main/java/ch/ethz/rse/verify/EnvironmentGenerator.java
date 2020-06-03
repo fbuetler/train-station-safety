@@ -63,7 +63,10 @@ public class EnvironmentGenerator {
 
 		// add initial track constraint
 		logger.debug("adding track constraint");
-		this.ints.add("track");
+		for (TrainStationInitializer ts: pointsTo.getTSInitPerMethod(method)) {
+			int uwu = ts.getUniqueNumber();
+			this.ints.add("track_"+uwu);
+		}
 
 		String ints_arr[] = Iterables.toArray(this.ints, String.class);
 		String reals[] = {}; // we are not analyzing real numbers
