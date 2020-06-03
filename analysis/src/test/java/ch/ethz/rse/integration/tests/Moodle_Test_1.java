@@ -2,7 +2,7 @@ package ch.ethz.rse.integration.tests;
 
 import ch.ethz.rse.TrainStation;
 
-// DISABLED
+// ENABLED
 // expected results:
 // TRACK_NON_NEGATIVE SAFE
 // TRACK_IN_RANGE SAFE
@@ -15,11 +15,13 @@ public class Moodle_Test_1 {
 		
 		int i = 2; 
 		int a = 2;
-		while(i*a < 10) {
+		int tmp = a*i;
+		while(tmp < 10) {
 			s.arrive(i);
 			
 			i++;
 			a++;
+			tmp = a*i;
 		}
 	}
 }

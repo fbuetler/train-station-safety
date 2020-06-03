@@ -37,11 +37,16 @@ public class TestClass {
         PointsToInitializer pointsTo = new PointsToInitializer(c);
         Map<String, NumericalAnalysis> amap = new HashMap<String, NumericalAnalysis>();
 
+        System.out.println("================ GOT HERE ================");
+
         for (SootMethod m: c.getMethods()) {
             String methodName = m.getName();
             if (methodName.contains("<init>")) {
                 continue; // skip constructor
             }
+
+            System.out.println("Added method "+m.getName());
+
             amap.put(methodName, new NumericalAnalysis(m, SootHelper.getUnitGraph(m), pointsTo));
         }
 

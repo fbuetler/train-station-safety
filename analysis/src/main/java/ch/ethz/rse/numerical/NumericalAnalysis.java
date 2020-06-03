@@ -111,6 +111,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		// initialize counts for loop heads
 		for (Loop l : new LoopNestTree(g.getBody())) {
 			loopHeads.put(l.getHead(), new IntegerWrapper(0));
+			logger.debug("Added loop "+l.getHead());
 		}
 		logger.info("Loopheads {}", loopHeads.toString());
 		// perform analysis by calling into super-class
@@ -223,6 +224,20 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 			inWrapper.copyInto(branchOutWrapper);
 		}
 
+		if (loopHeads.containsKey(s)) { // decide if its an if or loop statement
+			int iter = loopHeads.get(s).increment();
+			if (iter > WIDENING_THRESHOLD) {
+				NumericalStateWrapper prevState = loopHeadState.get(s);
+				inWrapper = prevState.widen(inWrapper);
+			}
+			// Need the copy because Soot apparently reuses the passed inWrapper object
+			// --> Up until now we needed to widen twice, the first one to create our own
+			// copy of the object,
+			// the second to actually obtain a fixpoint
+			loopHeadState.put(s, inWrapper.copy());
+		}
+
+		// Case distinction
 		try {
 			if (s instanceof DefinitionStmt) {
 				// handle assignment

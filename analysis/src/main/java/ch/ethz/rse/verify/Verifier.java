@@ -15,6 +15,7 @@ import apron.Environment;
 import apron.Interval;
 import apron.Manager;
 import apron.MpqScalar;
+import apron.Scalar;
 import apron.Tcons1;
 import apron.Texpr1BinNode;
 import apron.Texpr1CstNode;
@@ -101,7 +102,9 @@ public class Verifier extends AVerifier {
 				
 				VirtualInvokeExpr invokeExpr = (JVirtualInvokeExpr) ((JInvokeStmt)elem.getKey()).getInvokeExpr();
 				Value arg = invokeExpr.getArg(0);
-				nonNegative &= checkConstraint(0, Integer.MAX_VALUE, arg, state, na.man);
+				Scalar top = new MpqScalar();
+				top.setInfty(1);
+				nonNegative &= checkConstraint(new MpqScalar(0), top, arg, state, na.man);
 				
 				if(!nonNegative) { // Stop early
 					return false;
@@ -145,7 +148,9 @@ public class Verifier extends AVerifier {
 				for (Node n : nodes) {
 					TrainStationInitializer tsi = pointsTo.getTSInitializer(n);
 					nTracks = tsi.nTracks;
-					inRange &= checkConstraint(Integer.MIN_VALUE, nTracks - 1, arg, state, na.man);
+					Scalar bot = new MpqScalar();
+					bot.setInfty(-1);
+					inRange &= checkConstraint(bot, new MpqScalar(nTracks - 1), arg, state, na.man);
 				}
 
 				
@@ -162,7 +167,7 @@ public class Verifier extends AVerifier {
 	 * [lowerBound, upperBound]
 	 * NOTE: Overlapping intervals aren't enough to return true here
 	 */
-	private boolean checkConstraint(int lowerBound, int upperBound, Value arg, Abstract1 state, Manager man) {
+	private boolean checkConstraint(Scalar lowerBound, Scalar upperBound, Value arg, Abstract1 state, Manager man) {
 		logger.debug("state: {}", state);
 		logger.debug("arg: {}", arg);
 		logger.debug("interval: [{}, {}]", lowerBound, upperBound);
@@ -171,6 +176,7 @@ public class Verifier extends AVerifier {
 		if (arg instanceof JimpleLocal) {
 			String varName = ((JimpleLocal) arg).getName();
 			try {
+				logger.debug("arg has value "+state.getBound(man, varName));
 				inInterval = state.satisfy(man, varName, new Interval(lowerBound, upperBound));
 			} catch (ApronException e) {
 				logger.error("Check for constraint satisfiability threw an exception");
@@ -178,7 +184,7 @@ public class Verifier extends AVerifier {
 			}
 		} else if (arg instanceof IntConstant) {
 			int val = ((IntConstant) arg).value;
-			inInterval = lowerBound <= val && val <= upperBound;
+			inInterval = lowerBound.cmp(val)!=1 && upperBound.cmp(val)!=-1;
 		} else {
 			logger.error("Unhandled arg type in checkConstraint: {}", arg);
 		}
