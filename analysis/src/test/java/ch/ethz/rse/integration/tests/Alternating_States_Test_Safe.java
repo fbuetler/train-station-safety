@@ -2,7 +2,7 @@ package ch.ethz.rse.integration.tests;
 
 import ch.ethz.rse.TrainStation;
 
-// ENABLED
+// DISABLED
 // expected results:
 // TRACK_NON_NEGATIVE SAFE
 // TRACK_IN_RANGE SAFE
