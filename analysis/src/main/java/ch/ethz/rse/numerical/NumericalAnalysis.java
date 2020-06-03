@@ -287,7 +287,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		Node randomNode = (Node) pointsTo.getNodes((JimpleLocal) ((JVirtualInvokeExpr) jInvStmt.getInvokeExpr()).getBase()).toArray()[0];
 		TrainStationInitializer init = pointsTo.getTSInitializer(randomNode);
 		CallToArrive arrival = new CallToArrive(this.method, (JVirtualInvokeExpr) jInvStmt.getInvokeExpr(), this,
-				fallOutWrapper, init);
+				fallOutWrapper.copy(), init);
 		arrivals.add(arrival);
 		if(arrivalsMap.containsKey(jInvStmt)) {
 			arrivalsMap.get(jInvStmt).addState(fallOutWrapper);
@@ -298,7 +298,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		Value arg = ((JVirtualInvokeExpr) jInvStmt.getInvokeExpr()).getArg(0);
 		Texpr1Intern expr = new Texpr1Intern(atom(arg));
 		NumericalStateWrapper other = fallOutWrapper.assignCopy("track", expr);
-		fallOutWrapper.join(other).copyInto(fallOutWrapper);;
+		fallOutWrapper.join(other).copyInto(fallOutWrapper);
 	}
 
 	/**
