@@ -92,7 +92,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 * at the cost of runtime (lmeinen) Should we reset the number of times a head
 	 * is met when the branch falls through 100%, e.g. for nested loops?
 	 */
-	private static final int WIDENING_THRESHOLD = 11;
+	private static final int WIDENING_THRESHOLD = 6;
 
 	/**
 	 * 
@@ -113,7 +113,6 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 			loopHeads.put(l.getHead(), new IntegerWrapper(0));
 			logger.debug("Added loop "+l.getHead());
 		}
-		logger.info("Loopheads {}", loopHeads.toString());
 		// perform analysis by calling into super-class
 		logger.info("Analyzing {} in {}", method.getName(), method.getDeclaringClass().getName());
 		doAnalysis();
@@ -222,19 +221,6 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		if (branchOutWrappers.size() == 1) {
 			branchOutWrapper = branchOutWrappers.get(0);
 			inWrapper.copyInto(branchOutWrapper);
-		}
-
-		if (loopHeads.containsKey(s)) { // decide if its an if or loop statement
-			int iter = loopHeads.get(s).increment();
-			if (iter > WIDENING_THRESHOLD) {
-				NumericalStateWrapper prevState = loopHeadState.get(s);
-				inWrapper = prevState.widen(inWrapper);
-			}
-			// Need the copy because Soot apparently reuses the passed inWrapper object
-			// --> Up until now we needed to widen twice, the first one to create our own
-			// copy of the object,
-			// the second to actually obtain a fixpoint
-			loopHeadState.put(s, inWrapper.copy());
 		}
 
 		// Case distinction
