@@ -112,7 +112,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		for (Loop l : new LoopNestTree(g.getBody())) {
 			loopHeads.put(l.getHead(), new IntegerWrapper(0));
 		}
-
+		logger.info("Loopheads {}", loopHeads.toString());
 		// perform analysis by calling into super-class
 		logger.info("Analyzing {} in {}", method.getName(), method.getDeclaringClass().getName());
 		doAnalysis();
@@ -170,9 +170,15 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 			NumericalStateWrapper out) {
 		logger.debug("in merge: " + succNode);
 
-		logger.debug("join: {} with {}", in1, in2);
-		NumericalStateWrapper out_new = in1.join(in2);
-		out.set(out_new.get());
+		if (loopHeads.containsKey(succNode) && loopHeads.get(succNode).increment() > WIDENING_THRESHOLD) {
+			logger.debug("applying widening: {} with {}", in1, in2);
+			NumericalStateWrapper out_new = in1.widen(in2);
+			out.set(out_new.get());
+		} else {
+			logger.debug("join: {} with {}", in1, in2);
+			NumericalStateWrapper out_new = in1.join(in2);
+			out.set(out_new.get());
+		}
 	}
 
 	@Override
@@ -324,20 +330,6 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	private void handleIf(JIfStmt jIfStmt, NumericalStateWrapper inWrapper, NumericalStateWrapper fallOutWrapper,
 			NumericalStateWrapper branchOutWrapper) throws ApronException {
 		assert (fallOutWrapper != null && branchOutWrapper != null);
-
-		if (loopHeads.containsKey(jIfStmt)) { // decide if its an if or loop statement
-			int iter = loopHeads.get(jIfStmt).increment();
-			if (iter > WIDENING_THRESHOLD) {
-				NumericalStateWrapper prevState = loopHeadState.get(jIfStmt);
-				inWrapper = prevState.widen(inWrapper);
-			}
-		}
-
-		// Need the copy because Soot apparently reuses the passed inWrapper object
-		// --> Up until now we needed to widen twice, the first one to create our own
-		// copy of the object,
-		// the second to actually obtain a fixpoint
-		loopHeadState.put(jIfStmt, inWrapper.copy());
 
 		Value condition = jIfStmt.getCondition();
 		Linexpr1 expr = combSides(condition, false);
