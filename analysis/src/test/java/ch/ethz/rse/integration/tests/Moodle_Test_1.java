@@ -15,13 +15,11 @@ public class Moodle_Test_1 {
 		
 		int i = 2; 
 		int a = 2;
-		int tmp = a*i;
-		while(tmp < 10) {
+		while(a*i < 10) {
 			s.arrive(i);
 			
 			i++;
 			a++;
-			tmp = a*i;
 		}
 	}
 }
