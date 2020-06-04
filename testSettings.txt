@@ -3,6 +3,7 @@ Alternating_States_Test_Unsafe E
 Basic_Test_Safe E
 Basic_Test_Unsafe E
 Basic_Two_Initializer_Test_Safe E
+Coverage_Comb_Sides E
 Involved_Station_Assignment_Crash_Unsafe E
 Involved_Station_Assignment_Safe E
 Looped_Station_Assignment_Crash_Unsafe E

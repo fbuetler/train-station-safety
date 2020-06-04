@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 public class NumericalAnalysisTest {
+    String classpath = "ch.ethz.rse.numerical.testcases.";
+
     private class UnhandledExecutor implements Executable {
         private boolean raiseException;
 
@@ -31,7 +33,7 @@ public class NumericalAnalysisTest {
 
     @Test
     void copy() {
-        TestClass tc = new TestClass("ch.ethz.rse.numerical.testcases.SimpleMethod");
+        TestClass tc = new TestClass(classpath +"SimpleMethod");
         NumericalAnalysis na = tc.getNumericalAnalysis().get("method");
         NumericalStateWrapper wExp = na.newInitialFlow();
         NumericalStateWrapper wMut = na.entryInitialFlow();
