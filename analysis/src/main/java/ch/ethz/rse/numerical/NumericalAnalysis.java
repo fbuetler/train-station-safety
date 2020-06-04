@@ -94,10 +94,6 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	 */
 	private static final int WIDENING_THRESHOLD = 6;
 
-	public String getMethodName() {
-		return this.method.getName();
-	}
-
 	/**
 	 * 
 	 * @param method   method to analyze
