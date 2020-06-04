@@ -93,6 +93,10 @@ public class Verifier extends AVerifier {
 
 			NumericalAnalysis na = numericalAnalysis.get(method);
 
+			if (na.hasUnhandledVars) {
+				return false;
+			}
+
 			for (Map.Entry elem: na.arrivalsMap.entrySet()) {
 				CallToArrive callToArrive = (CallToArrive) elem.getValue();
 				Abstract1 state = callToArrive.getFoldedState().get();
@@ -126,7 +130,12 @@ public class Verifier extends AVerifier {
 
 			NumericalAnalysis na = numericalAnalysis.get(method);
 			boolean inRange = true;
-			
+
+			if (na.hasUnhandledVars) {
+				return false;
+			}
+
+
 			for (Map.Entry elem: na.arrivalsMap.entrySet()) {
 				CallToArrive callToArrive = (CallToArrive) elem.getValue();
 				Abstract1 state = callToArrive.getFoldedState().get();
@@ -203,7 +212,12 @@ public class Verifier extends AVerifier {
 			}
 
 			NumericalAnalysis na = numericalAnalysis.get(method);
-			// TODO (flbuetle) rm duplicate calls in arrivals: See comment in numericalAnalysis 
+
+			if (na.hasUnhandledVars) {
+				return false;
+			}
+
+			// TODO (flbuetle) rm duplicate calls in arrivals: See comment in numericalAnalysis
 			// (lmeinen) Removing duplicate calls to arrivals is the last thing you'd want to do,
 			// seeing as they are a violation of the property we're checking
 			// TODO: (lmeinen) Change method such that we pass set of constraints describing set of

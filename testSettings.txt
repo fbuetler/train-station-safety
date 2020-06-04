@@ -1,8 +1,10 @@
 Alternating_States_Test_Safe D
 Alternating_States_Test_Unsafe E
+Array_Test E
 Basic_Test_Safe E
 Basic_Test_Unsafe E
 Basic_Two_Initializer_Test_Safe E
+Cast_Test E
 Coverage_Comb_Sides E
 Involved_Station_Assignment_Crash_Unsafe E
 Involved_Station_Assignment_Safe E

@@ -83,6 +83,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 	public final Manager man = new Polka(true);
 
 	public final Environment env;
+	public final boolean hasUnhandledVars;
 
 	/**
 	 * We apply widening after updating the state at a given merge point for the
@@ -106,7 +107,13 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		this.method = method;
 		this.pointsTo = pointsTo;
 
-		this.env = new EnvironmentGenerator(method, this.pointsTo).getEnvironment();
+		EnvironmentGenerator envGen = new EnvironmentGenerator(method, this.pointsTo);
+		this.env = envGen.getEnvironment();
+
+		if (envGen.hasUnhandledVars()) {
+			this.hasUnhandledVars = true;
+			return;
+		}
 
 		// initialize counts for loop heads
 		for (Loop l : new LoopNestTree(g.getBody())) {
@@ -115,7 +122,13 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 		}
 		// perform analysis by calling into super-class
 		logger.info("Analyzing {} in {}", method.getName(), method.getDeclaringClass().getName());
-		doAnalysis();
+		try {
+			doAnalysis();
+		} catch (Exception e) { // in case anything goes wrong during the analysis we make sure we are unsafe and we don't crash
+			this.hasUnhandledVars = true;
+			return;
+		}
+		 this.hasUnhandledVars = false;
 	}
 
 	/**
@@ -438,7 +451,7 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 			intv.setTop(); // (flbuetle) or where else do we get top from?
 			expr.setCst(intv);
 		} else {
-			logger.warn("unhandled value");
+			unhandled("Unknown atom", value, true);
 		}
 		return expr;
 	}
@@ -487,7 +500,8 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 				intv.setTop(); // (flbuetle) or where else do we get top from?
 				expr.setCst(intv);
 			} else {
-				logger.warn("unhandled case for RHS of a condition");
+				unhandled("unhandled case for RHS of a condition", right, true);
+
 			}
 		} else if (left instanceof IntConstant) {
 			int valLeft = ((IntConstant) left).value;
@@ -506,14 +520,14 @@ public class NumericalAnalysis extends ForwardBranchedFlowAnalysis<NumericalStat
 				intv.setTop(); // (flbuetle) or where else do we get top from?
 				expr.setCst(intv);
 			} else {
-				logger.warn("unhandled case for RHS of a condition");
+				unhandled("unhandled case for RHS of a condition", right, true);
 			}
 		} else if (left instanceof ParameterRef) {
 			Interval intv = new Interval();
 			intv.setTop(); // (flbuetle) or where else do we get top from?
 			expr.setCst(intv);
 		} else {
-			logger.warn("unhandled case for LHS of a condition");
+			unhandled("unhandled case for LHS of a condition", left, true);
 		}
 
 		return expr;

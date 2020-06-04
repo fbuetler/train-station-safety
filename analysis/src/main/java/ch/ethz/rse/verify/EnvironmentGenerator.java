@@ -40,6 +40,8 @@ public class EnvironmentGenerator {
 
 	private final Environment env;
 
+	private boolean unhandledVars = false;
+
 	/**
 	 * 
 	 * @param method
@@ -83,13 +85,22 @@ public class EnvironmentGenerator {
 				logger.error("Illegal duplication of variable declaration found: {} (current declarations: {})",
 						varname, ints.toString());
 			}
+		} else if (var.getType().toString().equals("ch.ethz.rse.TrainStation")) {
+			logger.debug("Encountered TrainStation Variable {}", varname);
+		} else if (var.getType().toString().startsWith("ch.ethz.rse.integration.tests.")) {
+			logger.debug("Found class instance for test.");
 		} else {
-			logger.warn("Non integer typed variable found: {} (with type: {})", var, var.getType());
+			unhandledVars = true;
+			logger.warn("Non integer typed variable found: {} (with type: {})", varname, var.getType());
 		}
 	}
 
 	public Environment getEnvironment() {
 		return this.env;
+	}
+
+	public boolean hasUnhandledVars() {
+		return this.unhandledVars;
 	}
 
 }
